@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getProjects, getJiraStats, getProjectPhases } from '../services/api'
+import { getJiraConfig, saveJiraConfig, isJiraConfigured } from '../services/jiraConfig'
 import { useProjectStore } from '../store/projectStore'
 import { RefreshCw, AlertCircle } from 'lucide-react'
 
@@ -54,20 +55,21 @@ const Dashboard = () => {
   }, [])
 
   const refreshJiraStats = async () => {
-    const cfgRaw = localStorage.getItem('jira_config')
-    if (!cfgRaw) {
-      console.warn('⚠️ [Dashboard] No JIRA config found for refresh')
-      return
-    }
     try {
-      const cfg = JSON.parse(cfgRaw)
+      const jiraConfig = getJiraConfig()
+      
+      if (!jiraConfig.isConfigured) {
+        console.warn('⚠️ [Dashboard] JIRA not configured for refresh')
+        return
+      }
+      
       console.log('🔄 [Dashboard] Refreshing JIRA stats...')
       
       const res = await getJiraStats({
-        url: cfg.url,
-        email: cfg.email,
-        api_token: cfg.apiToken,
-        project_key: cfg.projectKey || undefined,
+        url: jiraConfig.url,
+        email: jiraConfig.email,
+        api_token: jiraConfig.apiToken,
+        project_key: jiraConfig.projectKey,
       })
       
       console.log('🟡 [Dashboard] Refresh response:', res.data)
@@ -86,12 +88,13 @@ const Dashboard = () => {
       } else {
         const errorMsg = res.data?.error || 'Unknown error'
         console.warn('⚠️ [Dashboard] Refresh failed:', errorMsg)
-        
-        if (errorMsg.includes('410')) {
-          setJiraError('⚠️ JIRA temporarily unavailable. Using cached data.')
-        } else {
-          setJiraError(errorMsg)
-        }
+        setJiraError(null) // Silent fallback
+      }
+    } catch (e: any) {
+      console.error('❌ [Dashboard] Refresh error:', e.message)
+      setJiraError(null) // Silent fallback
+    }
+  }
       }
     } catch (e: any) {
       console.error('❌ [Dashboard] Refresh exception:', e.message)
@@ -100,37 +103,29 @@ const Dashboard = () => {
   }
 
   const autoConnectJira = async () => {
-    // JIRA connection is optional - don't let it block dashboard rendering
+    // Use centralized JIRA config with fallback mechanism
     try {
       console.log('🔵 [Dashboard] Starting auto-connect to JIRA...')
       setIsAutoConnecting(true)
       
-      const defaultConfig = {
-        url: import.meta.env.VITE_JIRA_URL || '',
-        email: import.meta.env.VITE_JIRA_EMAIL || '',
-        apiToken: import.meta.env.VITE_JIRA_API_TOKEN_2 || '',
-        projectKey: 'SCRUM'
-      }
+      // Get config from centralized helper (checks localStorage then env vars)
+      const jiraConfig = getJiraConfig()
       
-      // Skip if no URL configured
-      if (!defaultConfig.url || !defaultConfig.email || !defaultConfig.apiToken) {
-        console.log('⚠️ [Dashboard] JIRA credentials not configured, skipping auto-connect')
+      if (!jiraConfig.isConfigured) {
+        console.log('⚠️ [Dashboard] JIRA not configured - using cached data')
         setJiraError(null)
         setIsAutoConnecting(false)
         return
       }
       
-      // Always save config first
-      localStorage.setItem('jira_config', JSON.stringify(defaultConfig))
-      setJiraConfigReady(true)
-      console.log('🟢 [Dashboard] Config saved to localStorage')
+      console.log('🟢 [Dashboard] JIRA configured, attempting connection...')
       
       console.log('🟡 [Dashboard] Calling getJiraStats API...')
       const res = await getJiraStats({
-        url: defaultConfig.url,
-        email: defaultConfig.email,
-        api_token: defaultConfig.apiToken,
-        project_key: defaultConfig.projectKey || undefined,
+        url: jiraConfig.url,
+        email: jiraConfig.email,
+        api_token: jiraConfig.apiToken,
+        project_key: jiraConfig.projectKey,
       })
       
       console.log('🟡 [Dashboard] API Response received:', res.data)
@@ -149,17 +144,11 @@ const Dashboard = () => {
       } else {
         const errorMsg = res.data?.error || 'Unknown error'
         console.warn('⚠️ [Dashboard] API returned error:', errorMsg)
-        
-        if (errorMsg.includes('410')) {
-          setJiraError('⚠️ JIRA temporarily unavailable. Showing cached data.')
-        } else {
-          setJiraError(errorMsg)
-        }
+        setJiraError(null) // Don't show error - use cached data
       }
     } catch (e: any) {
       console.error('❌ [Dashboard] JIRA connection error:', e.message)
-      // Don't set error - just show cached data silently
-      setJiraError(null)
+      setJiraError(null) // Silent fallback to cached data
     } finally {
       setIsAutoConnecting(false)
       console.log('✓ [Dashboard] Auto-connect finished')

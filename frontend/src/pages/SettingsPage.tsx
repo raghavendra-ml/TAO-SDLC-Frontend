@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Settings, Save, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { getFullApiUrl } from '../services/api'
+import { getJiraConfig, saveJiraConfig } from '../services/jiraConfig'
 import toast from 'react-hot-toast'
 
 interface JiraConfig {
@@ -11,11 +12,13 @@ interface JiraConfig {
 }
 
 const SettingsPage = () => {
+  // Load from centralized config with fallback to env vars
+  const centralizedConfig = getJiraConfig()
   const [jiraConfig, setJiraConfig] = useState<JiraConfig>({
-    url: localStorage.getItem('jira_url') || import.meta.env.VITE_JIRA_URL || '',
-    email: localStorage.getItem('jira_email') || import.meta.env.VITE_JIRA_EMAIL || '',
-    apiToken: localStorage.getItem('jira_api_token') || import.meta.env.VITE_JIRA_API_TOKEN_1 || '',
-    apiToken2: localStorage.getItem('jira_api_token_2') || import.meta.env.VITE_JIRA_API_TOKEN_2 || '',
+    url: centralizedConfig.url || import.meta.env.VITE_JIRA_URL || '',
+    email: centralizedConfig.email || import.meta.env.VITE_JIRA_EMAIL || '',
+    apiToken: centralizedConfig.apiToken || import.meta.env.VITE_JIRA_API_TOKEN_1 || '',
+    apiToken2: import.meta.env.VITE_JIRA_API_TOKEN_2 || '',
   })
 
   const [showToken, setShowToken] = useState(false)
@@ -31,12 +34,13 @@ const SettingsPage = () => {
 
     setIsSaving(true)
     try {
-      localStorage.setItem('jira_url', jiraConfig.url)
-      localStorage.setItem('jira_email', jiraConfig.email)
-      localStorage.setItem('jira_api_token', jiraConfig.apiToken)
-      if (jiraConfig.apiToken2) {
-        localStorage.setItem('jira_api_token_2', jiraConfig.apiToken2)
-      }
+      // Use centralized config save function
+      saveJiraConfig({
+        url: jiraConfig.url,
+        email: jiraConfig.email,
+        apiToken: jiraConfig.apiToken,
+        projectKey: 'SCRUM',
+      })
       toast.success('JIRA settings saved successfully!')
     } catch (error) {
       toast.error('Failed to save settings')
