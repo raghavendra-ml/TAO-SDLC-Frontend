@@ -1,9 +1,47 @@
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { getProjects, getJiraStats, getProjectPhases } from '../services/api'
 import { getJiraConfig, saveJiraConfig, isJiraConfigured } from '../services/jiraConfig'
 import { useProjectStore } from '../store/projectStore'
 import { RefreshCw, AlertCircle } from 'lucide-react'
+
+// Error boundary wrapper for dashboard sections
+class DashboardErrorBoundary extends React.Component<
+  { children: ReactNode },
+  { hasError: boolean; error: string | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error: error?.message || 'An error occurred' }
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('🔴 [Dashboard Error Boundary]:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-900">Dashboard Error</p>
+              <p className="text-xs text-red-700 mt-1">{this.state.error}</p>
+              <p className="text-xs text-red-600 mt-2">The application is still running. Try refreshing the page.</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 const Dashboard = () => {
   // Loading flag for projects
@@ -238,22 +276,23 @@ const Dashboard = () => {
   }, [projects])
   
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1">High-level status overview</p>
-        </div>
-      </div>
-      
-      {/* Two-column layout: Projects and JIRA sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Projects Overview */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Projects Overview</h2>
-            <Link to="/projects" className="text-sm text-primary-600 hover:underline">View all</Link>
+    <DashboardErrorBoundary>
+      <div>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-500 mt-1">High-level status overview</p>
           </div>
+        </div>
+      
+        {/* Two-column layout: Projects and JIRA sections */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Projects Overview */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Projects Overview</h2>
+              <Link to="/projects" className="text-sm text-primary-600 hover:underline">View all</Link>
+            </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             <div className="rounded-lg border border-gray-200 p-4 text-center">
               {loadingProjects ? (
@@ -338,6 +377,7 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+        </div>
 
         {/* JIRA Overview */}
         <div className="card">
@@ -380,23 +420,18 @@ const Dashboard = () => {
               </div>
             </div>
           ) : (
-            <div className="rounded-lg border border-gray-200 p-6 text-center">
-              {isAutoConnecting ? (
-                <>
-                  <div className="inline-block w-8 h-8 border-4 border-gray-300 border-t-primary-600 rounded-full animate-spin mb-3"></div>
-                  <p className="text-sm text-gray-600">Connecting to JIRA...</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-gray-600">JIRA isn't connected yet.</p>
-                  <Link to="/projects" className="mt-3 inline-block btn-primary">Connect in Projects</Link>
-                </>
-              )}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="rounded-lg border border-gray-200 p-4 text-center animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                </div>
+              ))}
             </div>
           )}
         </div>
       </div>
-    </div>
+    </DashboardErrorBoundary>
   )
 }
 
