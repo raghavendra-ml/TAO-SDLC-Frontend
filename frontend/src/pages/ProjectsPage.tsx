@@ -6,6 +6,11 @@ import { Activity, FolderOpen, RefreshCw, Trash2, Plus, Download, Settings, Chec
 import toast from 'react-hot-toast'
 import CreateProjectModal from '../components/modals/CreateProjectModal'
 
+// Environment variables
+const VITE_JIRA_URL = import.meta.env.VITE_JIRA_URL || ''
+const VITE_JIRA_EMAIL = import.meta.env.VITE_JIRA_EMAIL || ''
+const VITE_JIRA_API_TOKEN_2 = import.meta.env.VITE_JIRA_API_TOKEN_2 || ''
+
 const ProjectsPage = () => {
   const { projects, setProjects } = useProjectStore()
   const [loading, setLoading] = useState(false)
@@ -24,9 +29,9 @@ const ProjectsPage = () => {
   const [displayedJiraProjects, setDisplayedJiraProjects] = useState<any[]>([])
 
   const [jiraConfig, setJiraConfig] = useState({
-    url: import.meta.env.VITE_JIRA_URL || 'https://taodigitalsolutions-team-x1wa6h9b.atlassian.net/',
-    email: import.meta.env.VITE_JIRA_EMAIL || 'raghavendra.thummala@taodigitalsolutions.com',
-    apiToken: import.meta.env.VITE_JIRA_API_TOKEN_2 || 'ATATT3xFfGF02vtMz5bnQP6tu-potUe3ki6ID8J64agtTZA1Zn78JOmuruszUpq9mKjJAljDvy8RDvc8_jNuLXgAJFzSH4o0QuEXS_Ls1T1CQHN6g48TrzoCw5FePqXDuljgCKYT2TwIs7JjCF7rDiQeBytSURwkWcI6J64L_lmLukxVLbD3UNA=A3B4A7C6',
+    url: import.meta.env.VITE_JIRA_URL || '',
+    email: import.meta.env.VITE_JIRA_EMAIL || '',
+    apiToken: import.meta.env.VITE_JIRA_API_TOKEN_2 || '',
     projectKey: ''
   })
 
@@ -262,9 +267,9 @@ const ProjectsPage = () => {
                       localStorage.removeItem('jira_stats')
                       setJiraConnected(false)
                       setJiraConfig({ 
-                        url: import.meta.env.VITE_JIRA_URL || 'https://taodigitalsolutions-team-x1wa6h9b.atlassian.net/',
-                        email: import.meta.env.VITE_JIRA_EMAIL || 'raghavendra.thummala@taodigitalsolutions.com',
-                        apiToken: import.meta.env.VITE_JIRA_API_TOKEN_2 || 'ATATT3xFfGF02vtMz5bnQP6tu-potUe3ki6ID8J64agtTZA1Zn78JOmuruszUpq9mKjJAljDvy8RDvc8_jNuLXgAJFzSH4o0QuEXS_Ls1T1CQHN6g48TrzoCw5FePqXDuljgCKYT2TwIs7JjCF7rDiQeBytSURwkWcI6J64L_lmLukxVLbD3UNA=A3B4A7C6',
+                        url: import.meta.env.VITE_JIRA_URL || '',
+                        email: import.meta.env.VITE_JIRA_EMAIL || '',
+                        apiToken: import.meta.env.VITE_JIRA_API_TOKEN_2 || '',
                         projectKey: 'SCRUM'
                       })
                       setJiraStats({ projects: 0, issues: 0, inProgress: 0, completed: 0 })

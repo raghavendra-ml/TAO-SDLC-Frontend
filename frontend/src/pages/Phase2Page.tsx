@@ -4,6 +4,11 @@ import { getProjectPhases, updatePhase, exportToJira } from '../services/api'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
 
+// Environment variables
+const VITE_JIRA_URL = import.meta.env.VITE_JIRA_URL || ''
+const VITE_JIRA_EMAIL = import.meta.env.VITE_JIRA_EMAIL || ''
+const VITE_JIRA_API_TOKEN_1 = import.meta.env.VITE_JIRA_API_TOKEN_1 || ''
+
 interface Epic {
   id: string
   title: string
@@ -53,9 +58,9 @@ export default function Phase2Page() {
   const [velocity, setVelocity] = useState<number | string>('')
   const [capacityCalculated, setCapacityCalculated] = useState(false)
   const [jiraConfig, setJiraConfig] = useState({
-    url: import.meta.env.VITE_JIRA_URL || 'https://taodigitalsolutions-team-x1wa6h9b.atlassian.net/',
-    email: import.meta.env.VITE_JIRA_EMAIL || 'raghavendra.thummala@taodigitalsolutions.com',
-    apiToken: import.meta.env.VITE_JIRA_API_TOKEN_1 || 'ATATT3xFfGF0T2Z-B7PmOkls4OUNAdSEQnjGaYlk-yIRsf9TKA7bcdoxtJW42OHOFywmgwGXZs4luAJyPjBk_4qFrukyehLSSTVchcCadu6AFX6WiBkLLsAvz8aiYPgUeVz2UzozPKvyJCpQigA7YuvMFpsKTuVxEiI_MbI9xtGbWO3g0tI67K4=2AB68EF7',
+    url: import.meta.env.VITE_JIRA_URL || '',
+    email: import.meta.env.VITE_JIRA_EMAIL || '',
+    apiToken: import.meta.env.VITE_JIRA_API_TOKEN_1 || '',
     projectKey: 'SCRUM'
   })
   const [showJiraModal, setShowJiraModal] = useState(false)
