@@ -1513,7 +1513,7 @@ ${openFile.content}
 
       // Save to backend (optional, works even if backend is not available)
       try {
-        const saveResponse = await fetch(`http://localhost:8000/api/projects/${projectId}/phases/5/deliverables`, {
+        const saveResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/projects/${projectId}/phases/5/deliverables`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -119,7 +119,7 @@ const RequirementUploader = ({ projectId, phaseId, onExtractComplete, onAPIExtra
       setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const, progress: 50 })))
 
       const response = await axios.post(
-        'http://localhost:8000/api/ai/extract-requirements',
+        `${import.meta.env.VITE_API_URL}/api/ai/extract-requirements`,
         formData,
         {
           headers: {
@@ -190,7 +190,7 @@ const RequirementUploader = ({ projectId, phaseId, onExtractComplete, onAPIExtra
       setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const, progress: 50 })))
 
       const response = await axios.post(
-        'http://localhost:8000/api/ai/extract-api-requirements',
+        `${import.meta.env.VITE_API_URL}/api/ai/extract-api-requirements`,
         formData,
         {
           headers: {

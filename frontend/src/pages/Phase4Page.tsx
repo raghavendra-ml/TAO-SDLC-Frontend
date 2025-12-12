@@ -867,7 +867,7 @@ const Phase4Page = () => {
         },
         servers: [
           {
-            url: 'http://localhost:8000',
+            url: import.meta.env.VITE_API_URL,
             description: 'Development server'
           }
         ],
