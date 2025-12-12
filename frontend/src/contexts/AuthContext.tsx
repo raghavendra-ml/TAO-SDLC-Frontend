@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (username: string, password: string) => {
-    const response = await axios.post(getFullApiUrl('/api/auth/login/json'), {
+    const response = await axios.post(getFullApiUrl('/auth/login/json'), {
       username,
       password
     })
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signup = async (data: SignupData) => {
-    const response = await axios.post(getFullApiUrl('/api/auth/signup'), data)
+    const response = await axios.post(getFullApiUrl('/auth/signup'), data)
     const { access_token, user: userData } = response.data
 
     // Store in state and localStorage
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const demoLogin = async () => {
-    const response = await axios.post(getFullApiUrl('/api/auth/demo'))
+    const response = await axios.post(getFullApiUrl('/auth/demo'))
     const { access_token, user: userData } = response.data
 
     // Store in state and localStorage

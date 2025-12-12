@@ -16,12 +16,22 @@ export interface JiraConfig {
  * Get JIRA configuration from environment variables (VITE_JIRA_*)
  */
 const getEnvJiraConfig = (): Partial<JiraConfig> => {
-  return {
+  const config = {
     url: import.meta.env.VITE_JIRA_URL || '',
     email: import.meta.env.VITE_JIRA_EMAIL || '',
     apiToken: import.meta.env.VITE_JIRA_API_TOKEN_2 || import.meta.env.VITE_JIRA_API_TOKEN_1 || '',
     projectKey: 'SCRUM',
   }
+  console.log('🔍 [JiraConfig] Environment vars:', {
+    url: !!config.url,
+    email: !!config.email,
+    apiToken: !!config.apiToken,
+    VITE_JIRA_URL: !!import.meta.env.VITE_JIRA_URL,
+    VITE_JIRA_EMAIL: !!import.meta.env.VITE_JIRA_EMAIL,
+    VITE_JIRA_API_TOKEN_1: !!import.meta.env.VITE_JIRA_API_TOKEN_1,
+    VITE_JIRA_API_TOKEN_2: !!import.meta.env.VITE_JIRA_API_TOKEN_2,
+  })
+  return config
 }
 
 /**

@@ -120,7 +120,7 @@ const RequirementUploader = ({ projectId, phaseId, onExtractComplete, onAPIExtra
       setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const, progress: 50 })))
 
       const response = await axios.post(
-        getFullApiUrl('/api/ai/extract-requirements'),
+        getFullApiUrl('/ai/extract-requirements'),
         formData,
         {
           headers: {
@@ -191,7 +191,7 @@ const RequirementUploader = ({ projectId, phaseId, onExtractComplete, onAPIExtra
       setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const, progress: 50 })))
 
       const response = await axios.post(
-        getFullApiUrl('/api/ai/extract-api-requirements'),
+        getFullApiUrl('/ai/extract-api-requirements'),
         formData,
         {
           headers: {

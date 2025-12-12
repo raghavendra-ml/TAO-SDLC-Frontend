@@ -58,7 +58,7 @@ const SettingsPage = () => {
 
     setTestingConnection(true)
     try {
-      const response = await fetch(getFullApiUrl('/api/jira/test-connection'), {
+      const response = await fetch(getFullApiUrl('/jira/test-connection'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
