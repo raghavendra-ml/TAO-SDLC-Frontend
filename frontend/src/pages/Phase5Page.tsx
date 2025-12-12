@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
-import { getProject, getProjectPhases, updatePhase, generateContent, getPersistedDeliverable } from '../services/api'
+import { getProject, getProjectPhases, updatePhase, generateContent, getPersistedDeliverable, getFullApiUrl } from '../services/api'
 import api from '../services/api'
 import { toast } from 'react-hot-toast'
 import { Code, FileCode, GitBranch, Lightbulb, Download, Copy, Play, RefreshCw, Sparkles, Edit3, Github, ArrowDown, ArrowUp, Filter, Lock, Unlock, Folder, FolderOpen, File, ChevronRight, ChevronDown, Eye, FileText, Search, AlertTriangle, CheckCircle, Layers, Trash2 } from 'lucide-react'
