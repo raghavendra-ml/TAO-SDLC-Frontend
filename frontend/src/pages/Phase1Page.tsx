@@ -137,7 +137,7 @@ export default function Phase1Page() {
           status: 'in_progress'
         })
         setPhaseStatus('in_progress')
-        toast.info('📝 Content edited. Phase moved back to "In Progress" - please resubmit for approval when ready.')
+        toast.success('📝 Content edited. Phase moved back to "In Progress" - please resubmit for approval when ready.')
       } catch (error) {
         console.error('Error resetting approval status:', error)
       }

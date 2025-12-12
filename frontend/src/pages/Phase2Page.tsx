@@ -104,8 +104,8 @@ export default function Phase2Page() {
       
       // Get project name from first phase's project_name field
       let projectName = `Project ${projectId}`
-      if (phases && phases.length > 0 && phases[0].project_name) {
-        projectName = phases[0].project_name
+      if (phases && phases.length > 0 && (phases[0] as any).project_name) {
+        projectName = (phases[0] as any).project_name
       }
       
       setProject({ name: projectName })
@@ -133,7 +133,7 @@ export default function Phase2Page() {
           const storiesList = phase2.data.userStories || []
           
           // 🔧 Sanitize epics: ensure blockers array is always defined and never empty is displayed
-          epicsList = epicsList.map(epic => ({
+          epicsList = epicsList.map((epic: any) => ({
             ...epic,
             blockers: (epic.blockers && epic.blockers.length > 0) ? epic.blockers : []
           }))

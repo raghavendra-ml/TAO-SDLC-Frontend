@@ -790,7 +790,7 @@ const Phase5Page = () => {
           }
 
           setRepositories(repos)
-          console.log('Repositories set successfully:', repos.map(r => ({ name: r.name, private: r.private, language: r.language })))
+          console.log('Repositories set successfully:', repos.map((r: any) => ({ name: r.name, private: r.private, language: r.language })))
           
           if (repos.length === 0) {
             toast('No repositories found matching filters', { icon: '📝' })

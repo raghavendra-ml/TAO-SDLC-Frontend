@@ -430,8 +430,8 @@ const Phase4Page = () => {
             console.log('   ❌ Parsed but not an array, got:', typeof systemComponentsArray)
             systemComponentsArray = []
           }
-        } catch(e) {
-          console.log('   ❌ Failed to parse as JSON:', e.message)
+        } catch(e: any) {
+          console.log('   ❌ Failed to parse as JSON:', (e as Error).message)
           systemComponentsArray = []
         }
       } else if (typeof systemComponents === 'object' && !Array.isArray(systemComponents)) {

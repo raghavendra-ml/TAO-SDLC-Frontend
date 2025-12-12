@@ -20,7 +20,7 @@ const EditRequirementModal = ({ isOpen, onClose, onSave, requirement }: EditRequ
 
   useEffect(() => {
     if (isOpen && requirement) {
-      setEditedRequirementText(requirement.requirement || '')
+      setEditedRequirementText((requirement as any).requirement || '')
       setEditedPriority(requirement.priority || 'Medium')
       setEditedCategory(requirement.category || 'Functional')
       setEditedStatus(requirement.status || 'draft')
