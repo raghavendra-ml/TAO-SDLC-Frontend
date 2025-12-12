@@ -26,6 +26,8 @@ const getEnvJiraConfig = (): Partial<JiraConfig> => {
     url: !!config.url,
     email: !!config.email,
     apiToken: !!config.apiToken,
+    urlValue: config.url ? config.url.substring(0, 50) + '...' : 'not set',
+    emailValue: config.email,
     VITE_JIRA_URL: !!import.meta.env.VITE_JIRA_URL,
     VITE_JIRA_EMAIL: !!import.meta.env.VITE_JIRA_EMAIL,
     VITE_JIRA_API_TOKEN_1: !!import.meta.env.VITE_JIRA_API_TOKEN_1,

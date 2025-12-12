@@ -132,15 +132,28 @@ const Dashboard = () => {
       }
       
       console.log('🟢 [Dashboard] JIRA configured, attempting connection...')
-      console.log('🟢 [Dashboard] Using config:', { url: jiraConfig.url, email: jiraConfig.email, hasToken: !!jiraConfig.apiToken, projectKey: jiraConfig.projectKey })
+      console.log('🟢 [Dashboard] Config Details:', {
+        url: jiraConfig.url,
+        email: jiraConfig.email,
+        apiTokenLength: jiraConfig.apiToken ? jiraConfig.apiToken.length : 0,
+        projectKey: jiraConfig.projectKey,
+      })
       
-      console.log('🟡 [Dashboard] Calling getJiraStats API...')
-      const res = await getJiraStats({
+      console.log('🟡 [Dashboard] Calling getJiraStats API with payload...')
+      const payload = {
         url: jiraConfig.url,
         email: jiraConfig.email,
         api_token: jiraConfig.apiToken,
         project_key: jiraConfig.projectKey,
+      }
+      console.log('🟡 [Dashboard] API Payload:', {
+        url: payload.url,
+        email: payload.email,
+        api_token: `***${payload.api_token ? payload.api_token.slice(-10) : 'NONE'}`,
+        project_key: payload.project_key,
       })
+      
+      const res = await getJiraStats(payload)
       
       console.log('🟡 [Dashboard] API Response received:', res.data)
       
@@ -163,7 +176,7 @@ const Dashboard = () => {
     } catch (e: any) {
       const statusCode = e.response?.status
       const errorData = e.response?.data
-      const errorMsg = errorData?.detail || e.message || 'Unknown error'
+      const errorMsg = errorData?.detail || errorData?.error || e.message || 'Unknown error'
       
       console.error('❌ [Dashboard] JIRA connection error:', errorMsg)
       console.error('❌ [Dashboard] Status:', statusCode)
@@ -172,14 +185,14 @@ const Dashboard = () => {
       // Show user-friendly error message but don't block
       let userMessage = 'JIRA connection failed. '
       if (statusCode === 401 || statusCode === 403) {
-        userMessage += 'Check your JIRA credentials in Settings.'
+        userMessage += 'Authentication failed. Check your JIRA credentials in Settings or Vercel environment variables. Token may be expired.'
       } else if (statusCode === 404) {
         userMessage += 'JIRA instance not found. Check URL in Settings.'
       } else {
         userMessage += 'Please check your JIRA configuration.'
       }
       
-      setJiraError(userMessage + ' Using cached data.')
+      setJiraError(userMessage + ' (Using cached data)')
       console.log('✓ [Dashboard] Continuing with cached JIRA data despite error')
     } finally {
       setIsAutoConnecting(false)
