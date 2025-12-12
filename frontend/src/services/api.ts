@@ -155,12 +155,17 @@ export const getJiraProjects = (jiraConfig: {
 // Helper function to get full API URL for fetch() calls
 // Automatically handles both local dev (relative path) and production (ngrok URL)
 export const getFullApiUrl = (endpoint: string) => {
-  const baseUrl = getApiBaseUrl()
-  // Remove leading slash from endpoint if present to avoid double slashes
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
-  return baseUrl.startsWith('http') 
-    ? `${baseUrl}${cleanEndpoint}`
-    : cleanEndpoint
+  const viteApiUrl = import.meta.env.VITE_API_URL
+  
+  // If VITE_API_URL is set (ngrok URL for production), use it
+  if (viteApiUrl && viteApiUrl.trim()) {
+    // Remove leading slash from endpoint to avoid double slashes
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint
+    return `${viteApiUrl}/${cleanEndpoint}`
+  }
+  
+  // For local development without ngrok, use relative path
+  return endpoint.startsWith('/') ? endpoint : `/${endpoint}`
 }
 
 export default api

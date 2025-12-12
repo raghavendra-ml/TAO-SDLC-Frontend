@@ -53,14 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (username: string, password: string) => {
-    const formData = new FormData()
-    formData.append('username', username)
-    formData.append('password', password)
-
-    const response = await axios.post(getFullApiUrl('/api/auth/login'), formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+    const response = await axios.post(getFullApiUrl('/api/auth/login/json'), {
+      username,
+      password
     })
 
     const { access_token, user: userData } = response.data
