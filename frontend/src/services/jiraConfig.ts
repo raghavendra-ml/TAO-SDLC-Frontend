@@ -50,6 +50,14 @@ const getLocalStorageJiraConfig = (): Partial<JiraConfig> => {
 }
 
 /**
+ * Normalize JIRA URL - remove trailing slashes
+ */
+const normalizeJiraUrl = (url: string): string => {
+  if (!url) return url
+  return url.trim().replace(/\/$/, '') // Remove trailing slash if present
+}
+
+/**
  * Check if JIRA configuration is valid and complete
  */
 const isValidJiraConfig = (config: Partial<JiraConfig>): config is JiraConfig => {
@@ -67,6 +75,7 @@ export const getJiraConfig = (): JiraConfig => {
     console.log('✅ [JiraConfig] Using localStorage config')
     return {
       ...localConfig,
+      url: normalizeJiraUrl(localConfig.url),
       isConfigured: true,
     }
   }
@@ -77,6 +86,7 @@ export const getJiraConfig = (): JiraConfig => {
     console.log('✅ [JiraConfig] Using environment variable config')
     return {
       ...envConfig,
+      url: normalizeJiraUrl(envConfig.url),
       isConfigured: true,
     }
   }
@@ -97,8 +107,13 @@ export const getJiraConfig = (): JiraConfig => {
  */
 export const saveJiraConfig = (config: Partial<JiraConfig>) => {
   try {
-    localStorage.setItem('jira_config', JSON.stringify(config))
-    console.log('✅ [JiraConfig] Config saved to localStorage')
+    // Normalize URL before saving
+    const normalizedConfig = {
+      ...config,
+      url: config.url ? normalizeJiraUrl(config.url) : '',
+    }
+    localStorage.setItem('jira_config', JSON.stringify(normalizedConfig))
+    console.log('✅ [JiraConfig] Config saved to localStorage (URL normalized)')
   } catch (e) {
     console.error('Failed to save JIRA config:', e)
   }

@@ -89,12 +89,29 @@ const Dashboard = () => {
       } else {
         const errorMsg = res.data?.error || 'Unknown error'
         console.warn('⚠️ [Dashboard] Refresh failed:', errorMsg)
-        setJiraError(null) // Silent fallback
+        setJiraError(`JIRA Error: ${errorMsg}`)
       }
     } catch (e: any) {
-      console.error('❌ [Dashboard] Refresh error:', e.message)
-      console.error('❌ [Dashboard] Error details:', e.response?.data || e)
-      setJiraError(null) // Silent fallback
+      const statusCode = e.response?.status
+      const errorData = e.response?.data
+      const errorMsg = errorData?.detail || e.message || 'Unknown error'
+      
+      console.error('❌ [Dashboard] Refresh error:', errorMsg)
+      console.error('❌ [Dashboard] Status:', statusCode)
+      console.error('❌ [Dashboard] Error details:', errorData || e)
+      
+      // Show user-friendly error but use cached data
+      let userMessage = 'Failed to refresh JIRA stats. '
+      if (statusCode === 401 || statusCode === 403) {
+        userMessage += 'Check your JIRA credentials in Settings.'
+      } else if (statusCode === 404) {
+        userMessage += 'JIRA instance not found.'
+      } else {
+        userMessage += 'Please check your JIRA configuration.'
+      }
+      
+      setJiraError(userMessage + ' (Using cached data)')
+      console.log('✓ [Dashboard] Continuing with cached JIRA data despite refresh error')
     }
   }
 
@@ -141,12 +158,29 @@ const Dashboard = () => {
       } else {
         const errorMsg = res.data?.error || 'Unknown error'
         console.warn('⚠️ [Dashboard] API returned error:', errorMsg)
-        setJiraError(null) // Don't show error - use cached data
+        setJiraError(`JIRA Error: ${errorMsg}. Using cached data.`) // Show error but continue
       }
     } catch (e: any) {
-      console.error('❌ [Dashboard] JIRA connection error:', e.message)
-      console.error('❌ [Dashboard] Full error:', e.response?.data || e)
-      setJiraError(null) // Silent fallback to cached data
+      const statusCode = e.response?.status
+      const errorData = e.response?.data
+      const errorMsg = errorData?.detail || e.message || 'Unknown error'
+      
+      console.error('❌ [Dashboard] JIRA connection error:', errorMsg)
+      console.error('❌ [Dashboard] Status:', statusCode)
+      console.error('❌ [Dashboard] Full error:', errorData || e)
+      
+      // Show user-friendly error message but don't block
+      let userMessage = 'JIRA connection failed. '
+      if (statusCode === 401 || statusCode === 403) {
+        userMessage += 'Check your JIRA credentials in Settings.'
+      } else if (statusCode === 404) {
+        userMessage += 'JIRA instance not found. Check URL in Settings.'
+      } else {
+        userMessage += 'Please check your JIRA configuration.'
+      }
+      
+      setJiraError(userMessage + ' Using cached data.')
+      console.log('✓ [Dashboard] Continuing with cached JIRA data despite error')
     } finally {
       setIsAutoConnecting(false)
       console.log('✓ [Dashboard] Auto-connect finished')
