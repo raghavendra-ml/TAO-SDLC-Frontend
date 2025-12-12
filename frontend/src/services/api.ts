@@ -1,8 +1,22 @@
 import axios from 'axios'
 import { Project, Phase, Approval, AIQuery, AIResponse } from '../types'
 
+// Helper to determine API URL - supports both local dev and production
+const getApiBaseUrl = () => {
+  const viteApiUrl = import.meta.env.VITE_API_URL
+  
+  // If VITE_API_URL is set (ngrok URL for production), use it
+  if (viteApiUrl && viteApiUrl.trim()) {
+    return `${viteApiUrl}/api`
+  }
+  
+  // For local development without ngrok, use relative path that proxies through Vite
+  // This uses the proxy configured in vite.config.ts
+  return '/api'
+}
+
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/api`,
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -137,6 +151,17 @@ export const getJiraProjects = (jiraConfig: {
   api_token: string
   project_key?: string
 }) => api.post('/integrations/jira/projects', jiraConfig)
+
+// Helper function to get full API URL for fetch() calls
+// Automatically handles both local dev (relative path) and production (ngrok URL)
+export const getFullApiUrl = (endpoint: string) => {
+  const baseUrl = getApiBaseUrl()
+  // Remove leading slash from endpoint if present to avoid double slashes
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+  return baseUrl.startsWith('http') 
+    ? `${baseUrl}${cleanEndpoint}`
+    : cleanEndpoint
+}
 
 export default api
 

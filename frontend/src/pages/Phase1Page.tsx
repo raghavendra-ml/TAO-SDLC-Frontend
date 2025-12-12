@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FileText, Users, CheckCircle, Edit3, AlertTriangle, Target, Loader2, UserPlus, Download, Save, ArrowLeftRight, ListChecks, ChevronDown, ChevronUp } from 'lucide-react'
-import { getProjectPhases, generateContent, updatePhase, analyzeRisks, getProject } from '../services/api'
+import { getProjectPhases, generateContent, updatePhase, analyzeRisks, getProject, getFullApiUrl } from '../services/api'
 import toast from 'react-hot-toast'
 import SelectStakeholderModal from '../components/modals/SelectStakeholderModal'
 import RequirementUploader from '../components/DocumentUpload/RequirementUploader'
@@ -302,7 +302,7 @@ export default function Phase1Page() {
       formData.append('project_id', projectId!.toString())
       formData.append('phase_id', phaseId.toString())
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/extract-manual-requirements`, {
+      const response = await fetch(getFullApiUrl('/api/ai/extract-manual-requirements'), {
         method: 'POST',
         body: formData
       })

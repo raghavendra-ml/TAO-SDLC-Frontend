@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Database as DbIcon, Database, Loader2, GitBranch, Server, Edit2, Save, CheckCircle, Clock, Code, Sparkles, FileText, Layers, ChevronDown, ChevronUp } from 'lucide-react'
-import { getProjectPhases, updatePhase, getProject, generateContent } from '../services/api'
+import { getProjectPhases, updatePhase, getProject, generateContent, getFullApiUrl } from '../services/api'
 import toast from 'react-hot-toast'
 import RequirementUploader from '../components/DocumentUpload/RequirementUploader'
 import SwaggerViewer from '../components/API/SwaggerViewer'
@@ -867,7 +867,7 @@ const Phase4Page = () => {
         },
         servers: [
           {
-            url: import.meta.env.VITE_API_URL,
+            url: getFullApiUrl('').replace('/api', ''),
             description: 'Development server'
           }
         ],

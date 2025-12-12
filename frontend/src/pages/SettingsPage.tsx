@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Settings, Save, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { getFullApiUrl } from '../services/api'
 import toast from 'react-hot-toast'
 
 interface JiraConfig {
@@ -53,7 +54,7 @@ const SettingsPage = () => {
 
     setTestingConnection(true)
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/jira/test-connection`, {
+      const response = await fetch(getFullApiUrl('/api/jira/test-connection'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

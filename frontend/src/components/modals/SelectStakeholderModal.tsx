@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Search, UserPlus, Loader2 } from 'lucide-react'
 import axios from 'axios'
+import { getFullApiUrl } from '../../services/api'
 import toast from 'react-hot-toast'
 
 interface User {
@@ -42,7 +43,7 @@ const SelectStakeholderModal = ({ isOpen, onClose, onSelect }: SelectStakeholder
   const loadRoles = async () => {
     setLoadingRoles(true)
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/roles/list`)
+      const response = await axios.get(getFullApiUrl('/api/users/roles/list'))
       setRoles(response.data)
     } catch (error) {
       console.error('Failed to load roles:', error)
@@ -55,7 +56,7 @@ const SelectStakeholderModal = ({ isOpen, onClose, onSelect }: SelectStakeholder
   const loadUsers = async (role: string) => {
     setLoading(true)
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/`, {
+      const response = await axios.get(getFullApiUrl('/api/users/'), {
         params: { role }
       })
       setUsers(response.data)

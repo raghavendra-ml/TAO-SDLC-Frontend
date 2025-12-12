@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react'
 import { Upload, FileText, FileSpreadsheet, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
-import toast from 'react-hot-toast'
 import axios from 'axios'
+import toast from 'react-hot-toast'
+import { getFullApiUrl } from '../../services/api'
 
 interface RequirementUploaderProps {
   projectId: number
@@ -119,7 +120,7 @@ const RequirementUploader = ({ projectId, phaseId, onExtractComplete, onAPIExtra
       setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const, progress: 50 })))
 
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/ai/extract-requirements`,
+        getFullApiUrl('/api/ai/extract-requirements'),
         formData,
         {
           headers: {
@@ -190,7 +191,7 @@ const RequirementUploader = ({ projectId, phaseId, onExtractComplete, onAPIExtra
       setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const, progress: 50 })))
 
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/ai/extract-api-requirements`,
+        getFullApiUrl('/api/ai/extract-api-requirements'),
         formData,
         {
           headers: {
