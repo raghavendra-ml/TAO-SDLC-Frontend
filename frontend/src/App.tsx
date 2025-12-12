@@ -14,6 +14,7 @@ import Phase5Page from './pages/Phase5Page'
 import Phase6Page from './pages/Phase6Page'
 import Phase7Page from './pages/Phase7Page'
 import ApprovalCenter from './pages/ApprovalCenter'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   return (
@@ -122,6 +123,13 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <ApprovalCenter />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Layout>
+                <SettingsPage />
               </Layout>
             </ProtectedRoute>
           } />
