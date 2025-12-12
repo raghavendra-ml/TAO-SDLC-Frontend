@@ -201,7 +201,7 @@ export default function Phase2Page() {
       const execOrder = data.executionOrder || []
       
       // 🔧 Sanitize epics: filter out empty blockers arrays to prevent "0" display
-      epicsList = epicsList.map(epic => ({
+      epicsList = epicsList.map((epic: any) => ({
         ...epic,
         blockers: (epic.blockers && Array.isArray(epic.blockers) && epic.blockers.length > 0) ? epic.blockers : []
       }))
