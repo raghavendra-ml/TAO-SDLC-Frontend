@@ -6,11 +6,6 @@ import { Activity, FolderOpen, RefreshCw, Trash2, Plus, Download, Settings, Chec
 import toast from 'react-hot-toast'
 import CreateProjectModal from '../components/modals/CreateProjectModal'
 
-// Environment variables
-const VITE_JIRA_URL = import.meta.env.VITE_JIRA_URL || ''
-const VITE_JIRA_EMAIL = import.meta.env.VITE_JIRA_EMAIL || ''
-const VITE_JIRA_API_TOKEN_2 = import.meta.env.VITE_JIRA_API_TOKEN_2 || ''
-
 const ProjectsPage = () => {
   const { projects, setProjects } = useProjectStore()
   const [loading, setLoading] = useState(false)

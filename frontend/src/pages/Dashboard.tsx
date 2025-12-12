@@ -4,11 +4,6 @@ import { getProjects, getJiraStats, getProjectPhases } from '../services/api'
 import { useProjectStore } from '../store/projectStore'
 import { RefreshCw, AlertCircle } from 'lucide-react'
 
-// Environment variables
-const VITE_JIRA_URL = import.meta.env.VITE_JIRA_URL || ''
-const VITE_JIRA_EMAIL = import.meta.env.VITE_JIRA_EMAIL || ''
-const VITE_JIRA_API_TOKEN_2 = import.meta.env.VITE_JIRA_API_TOKEN_2 || ''
-
 const Dashboard = () => {
   // Loading flag for projects
   const [loadingProjects, setLoadingProjects] = useState(true)

@@ -4,11 +4,6 @@ import { getProjectPhases, updatePhase, exportToJira } from '../services/api'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
 
-// Environment variables
-const VITE_JIRA_URL = import.meta.env.VITE_JIRA_URL || ''
-const VITE_JIRA_EMAIL = import.meta.env.VITE_JIRA_EMAIL || ''
-const VITE_JIRA_API_TOKEN_1 = import.meta.env.VITE_JIRA_API_TOKEN_1 || ''
-
 interface Epic {
   id: string
   title: string
