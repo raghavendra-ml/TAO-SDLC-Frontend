@@ -16,7 +16,14 @@ app = FastAPI(
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:3001"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:3001",
+        "https://tao-sdlc.vercel.app",  # Vercel deployment
+        "https://*.vercel.app",  # All Vercel preview deployments
+        "https://historiographical-uninjuriously-doreatha.ngrok-free.dev",  # ngrok tunnel
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
