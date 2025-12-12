@@ -64,6 +64,7 @@ const Dashboard = () => {
       }
       
       console.log('🔄 [Dashboard] Refreshing JIRA stats...')
+      console.log('🔄 [Dashboard] Using config:', { url: jiraConfig.url, email: jiraConfig.email, hasToken: !!jiraConfig.apiToken, projectKey: jiraConfig.projectKey })
       
       const res = await getJiraStats({
         url: jiraConfig.url,
@@ -92,6 +93,7 @@ const Dashboard = () => {
       }
     } catch (e: any) {
       console.error('❌ [Dashboard] Refresh error:', e.message)
+      console.error('❌ [Dashboard] Error details:', e.response?.data || e)
       setJiraError(null) // Silent fallback
     }
   }
@@ -113,6 +115,7 @@ const Dashboard = () => {
       }
       
       console.log('🟢 [Dashboard] JIRA configured, attempting connection...')
+      console.log('🟢 [Dashboard] Using config:', { url: jiraConfig.url, email: jiraConfig.email, hasToken: !!jiraConfig.apiToken, projectKey: jiraConfig.projectKey })
       
       console.log('🟡 [Dashboard] Calling getJiraStats API...')
       const res = await getJiraStats({
@@ -142,6 +145,7 @@ const Dashboard = () => {
       }
     } catch (e: any) {
       console.error('❌ [Dashboard] JIRA connection error:', e.message)
+      console.error('❌ [Dashboard] Full error:', e.response?.data || e)
       setJiraError(null) // Silent fallback to cached data
     } finally {
       setIsAutoConnecting(false)
