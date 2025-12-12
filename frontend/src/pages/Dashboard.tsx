@@ -100,23 +100,31 @@ const Dashboard = () => {
   }
 
   const autoConnectJira = async () => {
-    // ALWAYS auto-connect with default credentials on dashboard load
-    console.log('🔵 [Dashboard] Starting auto-connect to JIRA...')
-    setIsAutoConnecting(true)
-    
-    const defaultConfig = {
-      url: import.meta.env.VITE_JIRA_URL || '',
-      email: import.meta.env.VITE_JIRA_EMAIL || '',
-      apiToken: import.meta.env.VITE_JIRA_API_TOKEN_2 || '',
-      projectKey: 'SCRUM'
-    }
-    
-    // Always save config first
-    localStorage.setItem('jira_config', JSON.stringify(defaultConfig))
-    setJiraConfigReady(true) // Trigger re-render to show JIRA section
-    console.log('🟢 [Dashboard] Config saved to localStorage')
-    
+    // JIRA connection is optional - don't let it block dashboard rendering
     try {
+      console.log('🔵 [Dashboard] Starting auto-connect to JIRA...')
+      setIsAutoConnecting(true)
+      
+      const defaultConfig = {
+        url: import.meta.env.VITE_JIRA_URL || '',
+        email: import.meta.env.VITE_JIRA_EMAIL || '',
+        apiToken: import.meta.env.VITE_JIRA_API_TOKEN_2 || '',
+        projectKey: 'SCRUM'
+      }
+      
+      // Skip if no URL configured
+      if (!defaultConfig.url || !defaultConfig.email || !defaultConfig.apiToken) {
+        console.log('⚠️ [Dashboard] JIRA credentials not configured, skipping auto-connect')
+        setJiraError(null)
+        setIsAutoConnecting(false)
+        return
+      }
+      
+      // Always save config first
+      localStorage.setItem('jira_config', JSON.stringify(defaultConfig))
+      setJiraConfigReady(true)
+      console.log('🟢 [Dashboard] Config saved to localStorage')
+      
       console.log('🟡 [Dashboard] Calling getJiraStats API...')
       const res = await getJiraStats({
         url: defaultConfig.url,
@@ -149,9 +157,9 @@ const Dashboard = () => {
         }
       }
     } catch (e: any) {
-      console.error('❌ [Dashboard] Exception:', e.message)
-      const errMsg = e.response?.data?.error || e.message || 'Connection failed'
-      setJiraError(`Could not connect: ${errMsg}`)
+      console.error('❌ [Dashboard] JIRA connection error:', e.message)
+      // Don't set error - just show cached data silently
+      setJiraError(null)
     } finally {
       setIsAutoConnecting(false)
       console.log('✓ [Dashboard] Auto-connect finished')
