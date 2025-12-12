@@ -95,12 +95,6 @@ const Dashboard = () => {
       setJiraError(null) // Silent fallback
     }
   }
-      }
-    } catch (e: any) {
-      console.error('❌ [Dashboard] Refresh exception:', e.message)
-      setJiraError('Could not refresh JIRA data.')
-    }
-  }
 
   const autoConnectJira = async () => {
     // Use centralized JIRA config with fallback mechanism
