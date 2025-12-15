@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const demoLogin = async () => {
-    const response = await axios.post(getFullApiUrl('/auth/demo'))
+    const response = await axios.post(getFullApiUrl('/auth/demo_login'))
     const { access_token, user: userData } = response.data
 
     // Store in state and localStorage
