@@ -49,6 +49,7 @@ class DashboardErrorBoundary extends React.Component<
 const Dashboard = () => {
   // Loading flag for projects
   const [loadingProjects, setLoadingProjects] = useState(true)
+  const [projectsError, setProjectsError] = useState<string | null>(null)
   const [jiraOverview, setJiraOverview] = useState<{ projects: number; issues: number; inProgress: number; completed: number } | null>(null)
   const [jiraError, setJiraError] = useState<string | null>(null)
   const [isAutoConnecting, setIsAutoConnecting] = useState(false)
@@ -58,11 +59,17 @@ const Dashboard = () => {
   
   const loadProjects = async () => {
     setLoadingProjects(true)
+    setProjectsError(null)
     try {
+      console.log('📥 [Dashboard] Loading projects...')
       const res = await getProjects()
+      console.log('✅ [Dashboard] Projects loaded:', res.data)
       setProjects(res.data)
-    } catch (error) {
-      console.error('Error loading projects:', error)
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || error.message || 'Unknown error'
+      console.error('❌ [Dashboard] Error loading projects:', errorMsg, error)
+      console.error('❌ [Dashboard] Full error:', error)
+      setProjectsError(`Failed to load projects: ${errorMsg}`)
     } finally {
       setLoadingProjects(false)
     }
@@ -285,6 +292,17 @@ const Dashboard = () => {
             <p className="text-gray-500 mt-1">High-level status overview</p>
           </div>
         </div>
+
+        {/* Show projects loading error if any */}
+        {projectsError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-900">Projects Error</p>
+              <p className="text-xs text-red-700 mt-1">{projectsError}</p>
+            </div>
+          </div>
+        )}
       
         {/* Two-column layout: Projects and JIRA sections */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
