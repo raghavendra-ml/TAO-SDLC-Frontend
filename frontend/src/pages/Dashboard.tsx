@@ -69,7 +69,9 @@ const Dashboard = () => {
   const [jiraError, setJiraError] = useState<string | null>(null)
   const [isAutoConnecting, setIsAutoConnecting] = useState(false)
   const [jiraConfigReady, setJiraConfigReady] = useState(false) // Track when config is saved
-  const { projects, setProjects } = useProjectStore()
+  const { projects: storeProjects, setProjects } = useProjectStore()
+  // Ensure projects always has a value to prevent crashes
+  const projects = storeProjects || []
   const [docActivity, setDocActivity] = useState<Record<number, { prdCount: number; prdLast?: string; brdCount: number; brdLast?: string }>>({})
   
   const loadProjects = async () => {
@@ -242,8 +244,8 @@ const Dashboard = () => {
   }
 
 
-  const totalProjects = projects.length
-  const completedProjects = useMemo(() => (projects || []).filter(p => (p.completed_phases || 0) >= (p.total_phases || 6)).length, [projects])
+  const totalProjects = (projects || []).length
+  const completedProjects = useMemo(() => (projects || []).filter((p: any) => (p.completed_phases || 0) >= (p.total_phases || 6)).length, [projects])
   const inProgressProjects = Math.max(0, totalProjects - completedProjects)
 
   const isJiraConnected = jiraConfigReady || !!localStorage.getItem('jira_config')
@@ -288,7 +290,7 @@ const Dashboard = () => {
   if (!projects) {
     return (
       <DashboardErrorBoundary>
-        <div className="p-8">
+        <div className="min-h-screen bg-gray-50 p-8">
           <div className="space-y-4">
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
             <div className="animate-pulse space-y-4">
