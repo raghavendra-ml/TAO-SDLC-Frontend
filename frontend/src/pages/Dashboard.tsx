@@ -16,7 +16,8 @@ class DashboardErrorBoundary extends React.Component<
   }
 
   static getDerivedStateFromError(error: any) {
-    return { hasError: true, error: error?.message || 'An error occurred' }
+    console.error('🔴 [Dashboard ErrorBoundary] Caught error:', error)
+    return { hasError: true, error: error?.message || String(error) || 'An error occurred' }
   }
 
   componentDidCatch(error: any, errorInfo: any) {
@@ -26,13 +27,15 @@ class DashboardErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-red-900">Dashboard Error</p>
-              <p className="text-xs text-red-700 mt-1">{this.state.error}</p>
-              <p className="text-xs text-red-600 mt-2">The application is still running. Try refreshing the page.</p>
+        <div className="p-8">
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-900">Dashboard Error</p>
+                <p className="text-xs text-red-700 mt-1">{this.state.error}</p>
+                <p className="text-xs text-red-600 mt-2">Please try refreshing the page or contact support.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -259,6 +262,20 @@ const Dashboard = () => {
     if (projects.length) loadDocActivity()
   }, [projects])
   
+  // Ensure we always render something
+  if (!projects) {
+    return (
+      <DashboardErrorBoundary>
+        <div className="p-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+          </div>
+        </div>
+      </DashboardErrorBoundary>
+    )
+  }
+
   return (
     <DashboardErrorBoundary>
       <div>
