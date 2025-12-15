@@ -77,17 +77,26 @@ const Dashboard = () => {
       } catch (e) {
         console.warn('Failed to parse cached JIRA stats')
       }
-    } else {
+    }
+    
+    if (!saved) {
       // Set default mock stats for first time
-      const defaultStats = { projects: 10, issues: 0, inProgress: 0, completed: 0 }
+      const defaultStats = { projects: 0, issues: 0, inProgress: 0, completed: 0 }
       setJiraOverview(defaultStats)
       localStorage.setItem('jira_stats', JSON.stringify(defaultStats))
     }
+    
     // Auto-connect with defaults if not connected
-    autoConnectJira().then(() => {
+    autoConnectJira().catch(err => {
+      console.error('[Dashboard] Auto-connect error caught:', err)
+      // Don't re-throw - we have fallback data
+    }).finally(() => {
       // After auto-connect completes, refresh stats after a short delay
       setTimeout(() => {
-        refreshJiraStats()
+        refreshJiraStats().catch(err => {
+          console.error('[Dashboard] Refresh error caught:', err)
+          // Don't re-throw - we have fallback data
+        })
       }, 300)
     })
   }, [])
@@ -102,7 +111,6 @@ const Dashboard = () => {
       }
       
       console.log('🔄 [Dashboard] Refreshing JIRA stats...')
-      console.log('🔄 [Dashboard] Using config:', { url: jiraConfig.url, email: jiraConfig.email, hasToken: !!jiraConfig.apiToken, projectKey: jiraConfig.projectKey })
       
       const res = await getJiraStats({
         url: jiraConfig.url,
@@ -110,8 +118,6 @@ const Dashboard = () => {
         api_token: jiraConfig.apiToken,
         project_key: jiraConfig.projectKey,
       })
-      
-      console.log('🟡 [Dashboard] Refresh response:', res.data)
       
       if (res.data?.success) {
         const stats = {
@@ -131,14 +137,10 @@ const Dashboard = () => {
       }
     } catch (e: any) {
       const statusCode = e.response?.status
-      const errorData = e.response?.data
-      const errorMsg = errorData?.detail || e.message || 'Unknown error'
+      const errorMsg = e.response?.data?.detail || e.message || 'Unknown error'
       
       console.error('❌ [Dashboard] Refresh error:', errorMsg)
-      console.error('❌ [Dashboard] Status:', statusCode)
-      console.error('❌ [Dashboard] Error details:', errorData || e)
       
-      // Show user-friendly error but use cached data
       let userMessage = 'Failed to refresh JIRA stats. '
       if (statusCode === 401 || statusCode === 403) {
         userMessage += 'Check your JIRA credentials in Settings.'
@@ -253,24 +255,30 @@ const Dashboard = () => {
   useEffect(() => {
     // Load Phase 1 version history for up to 3 recent projects
     const loadDocActivity = async () => {
-      const targets = [...projects].sort((a: any, b: any) => (b.id || 0) - (a.id || 0)).slice(0, 3)
-      const results: Record<number, { prdCount: number; prdLast?: string; brdCount: number; brdLast?: string }> = {}
-      for (const p of targets) {
-        try {
-          const res = await getProjectPhases(p.id)
-          const phase1 = (res.data || []).find((ph: any) => ph.phase_number === 1)
-          const vh = phase1?.data?.versionHistory
-          results[p.id] = {
-            prdCount: (vh?.prd?.length) || 0,
-            prdLast: vh?.prd && vh.prd.length ? vh.prd[vh.prd.length - 1].editedAt : undefined,
-            brdCount: (vh?.brd?.length) || 0,
-            brdLast: vh?.brd && vh.brd.length ? vh.brd[vh.brd.length - 1].editedAt : undefined,
+      try {
+        const targets = [...projects].sort((a: any, b: any) => (b.id || 0) - (a.id || 0)).slice(0, 3)
+        const results: Record<number, { prdCount: number; prdLast?: string; brdCount: number; brdLast?: string }> = {}
+        for (const p of targets) {
+          try {
+            const res = await getProjectPhases(p.id)
+            const phase1 = (res.data || []).find((ph: any) => ph.phase_number === 1)
+            const vh = phase1?.data?.versionHistory
+            results[p.id] = {
+              prdCount: (vh?.prd?.length) || 0,
+              prdLast: vh?.prd && vh.prd.length ? vh.prd[vh.prd.length - 1].editedAt : undefined,
+              brdCount: (vh?.brd?.length) || 0,
+              brdLast: vh?.brd && vh.brd.length ? vh.brd[vh.brd.length - 1].editedAt : undefined,
+            }
+          } catch (e) {
+            // Ignore per-project errors
+            console.warn(`Failed to load activity for project ${p.id}:`, e)
           }
-        } catch (e) {
-          // Ignore per-project errors
         }
+        setDocActivity(results)
+      } catch (e) {
+        console.error('Failed to load document activity:', e)
+        // Continue without activity data
       }
-      setDocActivity(results)
     }
     if (projects.length) loadDocActivity()
   }, [projects])
