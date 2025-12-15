@@ -166,7 +166,7 @@ const Dashboard = () => {
       
       if (!jiraConfig.isConfigured) {
         console.log('⚠️ [Dashboard] JIRA not configured - using cached data')
-        setJiraError(null)
+        setJiraError('JIRA is not configured. Configure your JIRA instance in Settings to enable statistics.')
         setIsAutoConnecting(false)
         return
       }
@@ -402,10 +402,15 @@ const Dashboard = () => {
               </button>
             </div>
           </div>
-          {jiraError && (
+        {jiraError && (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-yellow-800">{jiraError}</p>
+              <div>
+                <p className="text-xs text-yellow-800">{jiraError}</p>
+                {jiraError.includes('not configured') || jiraError.includes('Configure') ? (
+                  <p className="text-xs text-yellow-700 mt-1">Go to <Link to="/settings" className="text-primary-600 hover:underline font-medium">Settings</Link> to add your JIRA credentials.</p>
+                ) : null}
+              </div>
             </div>
           )}
           {jiraOverview ? (
