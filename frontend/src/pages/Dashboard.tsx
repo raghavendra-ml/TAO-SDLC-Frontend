@@ -165,75 +165,51 @@ const Dashboard = () => {
       const jiraConfig = getJiraConfig()
       
       if (!jiraConfig.isConfigured) {
-        console.log('⚠️ [Dashboard] JIRA not configured - using cached data')
+        console.log('⚠️ [Dashboard] JIRA not configured - skipping JIRA section')
         setJiraError('JIRA is not configured. Configure your JIRA instance in Settings to enable statistics.')
         setIsAutoConnecting(false)
         return
       }
       
       console.log('🟢 [Dashboard] JIRA configured, attempting connection...')
-      console.log('🟢 [Dashboard] Config Details:', {
-        url: jiraConfig.url,
-        email: jiraConfig.email,
-        apiTokenLength: jiraConfig.apiToken ? jiraConfig.apiToken.length : 0,
-        projectKey: jiraConfig.projectKey,
-      })
       
-      console.log('🟡 [Dashboard] Calling getJiraStats API with payload...')
-      const payload = {
-        url: jiraConfig.url,
-        email: jiraConfig.email,
-        api_token: jiraConfig.apiToken,
-        project_key: jiraConfig.projectKey,
-      }
-      console.log('🟡 [Dashboard] API Payload:', {
-        url: payload.url,
-        email: payload.email,
-        api_token: `***${payload.api_token ? payload.api_token.slice(-10) : 'NONE'}`,
-        project_key: payload.project_key,
-      })
-      
-      const res = await getJiraStats(payload)
-      
-      console.log('🟡 [Dashboard] API Response received:', res.data)
-      
-      if (res.data?.success) {
-        const stats = {
-          projects: res.data.projects,
-          issues: res.data.issues,
-          inProgress: res.data.in_progress,
-          completed: res.data.completed,
+      try {
+        const payload = {
+          url: jiraConfig.url,
+          email: jiraConfig.email,
+          api_token: jiraConfig.apiToken,
+          project_key: jiraConfig.projectKey,
         }
-        setJiraOverview(stats)
-        setJiraError(null)
-        localStorage.setItem('jira_stats', JSON.stringify(stats))
-        console.log('✅ [Dashboard] Successfully connected! Stats:', stats)
-      } else {
-        const errorMsg = res.data?.error || 'Unknown error'
-        console.warn('⚠️ [Dashboard] API returned error:', errorMsg)
-        setJiraError(`JIRA Error: ${errorMsg}. Using cached data.`) // Show error but continue
+        
+        const res = await getJiraStats(payload)
+        
+        if (res.data?.success) {
+          const stats = {
+            projects: res.data.projects,
+            issues: res.data.issues,
+            inProgress: res.data.in_progress,
+            completed: res.data.completed,
+          }
+          setJiraOverview(stats)
+          setJiraError(null)
+          localStorage.setItem('jira_stats', JSON.stringify(stats))
+          console.log('✅ [Dashboard] JIRA connected and stats loaded:', stats)
+        } else {
+          // API returned error response - skip JIRA section
+          const errorMsg = res.data?.error || 'Connection failed'
+          console.warn('⚠️ [Dashboard] JIRA error:', errorMsg)
+          setJiraError(errorMsg)
+        }
+      } catch (apiError: any) {
+        // API call failed - skip JIRA section
+        const statusCode = apiError.response?.status
+        const errorMsg = apiError.response?.data?.detail || apiError.message || 'Connection failed'
+        
+        console.warn('⚠️ [Dashboard] JIRA API error:', { status: statusCode, message: errorMsg })
+        
+        // Set error to indicate JIRA is not available, but don't block the dashboard
+        setJiraError(`JIRA unavailable: ${errorMsg}`)
       }
-    } catch (e: any) {
-      const statusCode = e.response?.status
-      const errorData = e.response?.data
-      const errorMsg = errorData?.detail || errorData?.error || e.message || 'Unknown error'
-      
-      console.error('❌ [Dashboard] JIRA connection error:', errorMsg)
-      console.error('❌ [Dashboard] Status:', statusCode)
-      console.error('❌ [Dashboard] Full error:', errorData || e)
-      
-      // Show user-friendly error message but don't block
-      let userMessage = 'JIRA connection failed. '
-      if (statusCode === 401 || statusCode === 403) {
-        userMessage += 'Authentication failed. Check your JIRA credentials in Settings or Vercel environment variables. Token may be expired.'
-      } else if (statusCode === 404) {
-        userMessage += 'JIRA instance not found. Check URL in Settings.'
-      } else {
-        userMessage += 'Please check your JIRA configuration.'
-      }
-      
-      setJiraError(userMessage + ' (Using cached data)')
-      console.log('✓ [Dashboard] Continuing with cached JIRA data despite error')
     } finally {
       setIsAutoConnecting(false)
       console.log('✓ [Dashboard] Auto-connect finished')
@@ -387,62 +363,53 @@ const Dashboard = () => {
         </div>
         </div>
 
-        {/* JIRA Overview */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">JIRA Overview</h2>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={refreshJiraStats} 
-                disabled={isAutoConnecting}
-                className="text-gray-500 hover:text-gray-800 text-sm inline-flex items-center gap-1 disabled:opacity-50" 
-                title="Refresh JIRA"
-              >
-                <RefreshCw className={`w-4 h-4 ${isAutoConnecting ? 'animate-spin' : ''}`} /> {isAutoConnecting ? 'Connecting...' : 'Refresh'}
-              </button>
-            </div>
-          </div>
-        {jiraError && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-xs text-yellow-800">{jiraError}</p>
-                {jiraError.includes('not configured') || jiraError.includes('Configure') ? (
-                  <p className="text-xs text-yellow-700 mt-1">Go to <Link to="/settings" className="text-primary-600 hover:underline font-medium">Settings</Link> to add your JIRA credentials.</p>
-                ) : null}
+        {/* JIRA Overview - Optional, skip if error */}
+        {!jiraError && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">JIRA Overview</h2>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={refreshJiraStats} 
+                  disabled={isAutoConnecting}
+                  className="text-gray-500 hover:text-gray-800 text-sm inline-flex items-center gap-1 disabled:opacity-50" 
+                  title="Refresh JIRA"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isAutoConnecting ? 'animate-spin' : ''}`} /> {isAutoConnecting ? 'Connecting...' : 'Refresh'}
+                </button>
               </div>
             </div>
-          )}
-          {jiraOverview ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-lg border border-gray-200 p-4 text-center">
-                <p className="text-2xl font-bold text-indigo-600">{jiraOverview.projects ?? 0}</p>
-                <p className="text-xs text-gray-600 mt-1">Projects</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 p-4 text-center">
-                <p className="text-2xl font-bold text-gray-900">{jiraOverview.issues ?? 0}</p>
-                <p className="text-xs text-gray-600 mt-1">Issues</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 p-4 text-center">
-                <p className="text-2xl font-bold text-blue-600">{jiraOverview.inProgress ?? 0}</p>
-                <p className="text-xs text-gray-600 mt-1">In Progress</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 p-4 text-center">
-                <p className="text-2xl font-bold text-green-600">{jiraOverview.completed ?? 0}</p>
-                <p className="text-xs text-gray-600 mt-1">Completed</p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="rounded-lg border border-gray-200 p-4 text-center animate-pulse">
-                  <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
+            {jiraOverview ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="rounded-lg border border-gray-200 p-4 text-center">
+                  <p className="text-2xl font-bold text-indigo-600">{jiraOverview.projects ?? 0}</p>
+                  <p className="text-xs text-gray-600 mt-1">Projects</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <div className="rounded-lg border border-gray-200 p-4 text-center">
+                  <p className="text-2xl font-bold text-gray-900">{jiraOverview.issues ?? 0}</p>
+                  <p className="text-xs text-gray-600 mt-1">Issues</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4 text-center">
+                  <p className="text-2xl font-bold text-blue-600">{jiraOverview.inProgress ?? 0}</p>
+                  <p className="text-xs text-gray-600 mt-1">In Progress</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4 text-center">
+                  <p className="text-2xl font-bold text-green-600">{jiraOverview.completed ?? 0}</p>
+                  <p className="text-xs text-gray-600 mt-1">Completed</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="rounded-lg border border-gray-200 p-4 text-center animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </DashboardErrorBoundary>
   )
