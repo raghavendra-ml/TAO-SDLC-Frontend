@@ -121,7 +121,7 @@ export const signup = (data: {
   role?: string
 }) => api.post('/auth/signup', data)
 
-export const demoLogin = () => api.post('/auth/demo_login')
+export const demoLogin = () => api.post('/auth/demo')
 
 export const getCurrentUser = () => api.get('/auth/me')
 

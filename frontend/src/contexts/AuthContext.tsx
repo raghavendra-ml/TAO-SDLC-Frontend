@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import axios from 'axios'
-import { getFullApiUrl } from '../services/api'
+import { login as apiLogin, signup as apiSignup, demoLogin as apiDemoLogin } from '../services/api'
 import { useNavigate } from 'react-router-dom'
 
 interface User {
@@ -53,11 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (username: string, password: string) => {
-    const response = await axios.post(getFullApiUrl('/auth/login/json'), {
-      username,
-      password
-    })
-
+    const response = await apiLogin(username, password)
     const { access_token, user: userData } = response.data
 
     // Store in state and localStorage
@@ -71,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signup = async (data: SignupData) => {
-    const response = await axios.post(getFullApiUrl('/auth/signup'), data)
+    const response = await apiSignup(data)
     const { access_token, user: userData } = response.data
 
     // Store in state and localStorage
@@ -85,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const demoLogin = async () => {
-    const response = await axios.post(getFullApiUrl('/auth/demo_login'))
+    const response = await apiDemoLogin()
     const { access_token, user: userData } = response.data
 
     // Store in state and localStorage

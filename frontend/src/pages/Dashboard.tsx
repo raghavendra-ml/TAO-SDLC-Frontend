@@ -380,53 +380,57 @@ const Dashboard = () => {
         </div>
         </div>
 
-        {/* JIRA Overview - Optional, skip if error */}
-        {!jiraError && (
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">JIRA Overview</h2>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={refreshJiraStats} 
-                  disabled={isAutoConnecting}
-                  className="text-gray-500 hover:text-gray-800 text-sm inline-flex items-center gap-1 disabled:opacity-50" 
-                  title="Refresh JIRA"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isAutoConnecting ? 'animate-spin' : ''}`} /> {isAutoConnecting ? 'Connecting...' : 'Refresh'}
-                </button>
+        {/* JIRA Overview */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">JIRA Overview</h2>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={refreshJiraStats} 
+                disabled={isAutoConnecting}
+                className="text-gray-500 hover:text-gray-800 text-sm inline-flex items-center gap-1 disabled:opacity-50" 
+                title="Refresh JIRA"
+              >
+                <RefreshCw className={`w-4 h-4 ${isAutoConnecting ? 'animate-spin' : ''}`} /> {isAutoConnecting ? 'Connecting...' : 'Refresh'}
+              </button>
+            </div>
+          </div>
+          
+          {jiraError ? (
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+              <p className="text-sm text-gray-600">Failed to load JIRA statistics</p>
+              <p className="text-xs text-gray-500 mt-1">{jiraError}</p>
+            </div>
+          ) : jiraOverview ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="rounded-lg border border-gray-200 p-4 text-center">
+                <p className="text-2xl font-bold text-indigo-600">{jiraOverview.projects ?? 0}</p>
+                <p className="text-xs text-gray-600 mt-1">Projects</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4 text-center">
+                <p className="text-2xl font-bold text-gray-900">{jiraOverview.issues ?? 0}</p>
+                <p className="text-xs text-gray-600 mt-1">Issues</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4 text-center">
+                <p className="text-2xl font-bold text-blue-600">{jiraOverview.inProgress ?? 0}</p>
+                <p className="text-xs text-gray-600 mt-1">In Progress</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4 text-center">
+                <p className="text-2xl font-bold text-green-600">{jiraOverview.completed ?? 0}</p>
+                <p className="text-xs text-gray-600 mt-1">Completed</p>
               </div>
             </div>
-            {jiraOverview ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="rounded-lg border border-gray-200 p-4 text-center">
-                  <p className="text-2xl font-bold text-indigo-600">{jiraOverview.projects ?? 0}</p>
-                  <p className="text-xs text-gray-600 mt-1">Projects</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="rounded-lg border border-gray-200 p-4 text-center animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
                 </div>
-                <div className="rounded-lg border border-gray-200 p-4 text-center">
-                  <p className="text-2xl font-bold text-gray-900">{jiraOverview.issues ?? 0}</p>
-                  <p className="text-xs text-gray-600 mt-1">Issues</p>
-                </div>
-                <div className="rounded-lg border border-gray-200 p-4 text-center">
-                  <p className="text-2xl font-bold text-blue-600">{jiraOverview.inProgress ?? 0}</p>
-                  <p className="text-xs text-gray-600 mt-1">In Progress</p>
-                </div>
-                <div className="rounded-lg border border-gray-200 p-4 text-center">
-                  <p className="text-2xl font-bold text-green-600">{jiraOverview.completed ?? 0}</p>
-                  <p className="text-xs text-gray-600 mt-1">Completed</p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="rounded-lg border border-gray-200 p-4 text-center animate-pulse">
-                    <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </DashboardErrorBoundary>
   )
