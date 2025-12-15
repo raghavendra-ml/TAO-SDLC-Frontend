@@ -27,14 +27,20 @@ class DashboardErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-8">
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="min-h-screen bg-gray-50 p-8">
+          <div className="max-w-2xl p-6 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-red-900">Dashboard Error</p>
-                <p className="text-xs text-red-700 mt-1">{this.state.error}</p>
-                <p className="text-xs text-red-600 mt-2">Please try refreshing the page or contact support.</p>
+                <h2 className="text-lg font-semibold text-red-900">Dashboard Error</h2>
+                <p className="text-sm text-red-700 mt-2">{this.state.error}</p>
+                <p className="text-xs text-red-600 mt-3">Check the browser console (F12) for more details.</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                >
+                  Reload Page
+                </button>
               </div>
             </div>
           </div>
@@ -47,6 +53,15 @@ class DashboardErrorBoundary extends React.Component<
 }
 
 const Dashboard = () => {
+  // Diagnostic logging on mount
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL
+    console.log('🔍 [Dashboard] Environment Check:')
+    console.log(`  - VITE_API_URL: ${apiUrl || '(not set - using /api proxy)'}`)
+    console.log(`  - Current hostname: ${window.location.hostname}`)
+    console.log(`  - Token in storage: ${!!localStorage.getItem('token') ? '✅ Yes' : '❌ No'}`)
+  }, [])
+
   // Loading flag for projects
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [projectsError, setProjectsError] = useState<string | null>(null)
@@ -274,9 +289,13 @@ const Dashboard = () => {
     return (
       <DashboardErrorBoundary>
         <div className="p-8">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+          <div className="space-y-4">
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+              <p className="text-sm text-gray-600">Loading projects...</p>
+            </div>
           </div>
         </div>
       </DashboardErrorBoundary>
@@ -293,6 +312,15 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Environment Diagnostic Panel (Shows in dev mode or on localhost) */}
+        {(import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname.includes('vercel.app')) && (
+          <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs">
+            <p className="font-mono text-amber-900">
+              <span className="font-bold">Diagnostic:</span> API URL = <span className="bg-amber-100 px-2 rounded">{import.meta.env.VITE_API_URL || '(using /api proxy)'}</span> | Token = {localStorage.getItem('token') ? '✅ present' : '❌ missing'}
+            </p>
+          </div>
+        )}
+
         {/* Show projects loading error if any */}
         {projectsError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
@@ -300,6 +328,12 @@ const Dashboard = () => {
             <div>
               <p className="text-sm font-medium text-red-900">Projects Error</p>
               <p className="text-xs text-red-700 mt-1">{projectsError}</p>
+              <button 
+                onClick={loadProjects}
+                className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
+              >
+                Try again
+              </button>
             </div>
           </div>
         )}
