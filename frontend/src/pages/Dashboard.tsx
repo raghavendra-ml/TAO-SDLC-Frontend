@@ -306,184 +306,197 @@ const Dashboard = () => {
 
   return (
     <DashboardErrorBoundary>
-      <div>
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-500 mt-1">High-level status overview</p>
-          </div>
-        </div>
-
-        {/* Environment Diagnostic Panel (Shows in dev mode or on localhost) */}
-        {(import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname.includes('vercel.app')) && (
-          <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs">
-            <p className="font-mono text-amber-900">
-              <span className="font-bold">Diagnostic:</span> API URL = <span className="bg-amber-100 px-2 rounded">{import.meta.env.VITE_API_URL || '(using /api proxy)'}</span> | Token = {localStorage.getItem('token') ? '✅ present' : '❌ missing'}
-            </p>
-          </div>
-        )}
-
-        {/* Show projects loading error if any */}
-        {projectsError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+      <div className="min-h-screen bg-white">
+        <div className="max-w-7xl mx-auto p-8">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <p className="text-sm font-medium text-red-900">Projects Error</p>
-              <p className="text-xs text-red-700 mt-1">{projectsError}</p>
-              <button 
-                onClick={loadProjects}
-                className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
-              >
-                Try again
-              </button>
+              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+              <p className="text-gray-500 mt-1">High-level status overview</p>
             </div>
           </div>
-        )}
-      
-        {/* Two-column layout: Projects and JIRA sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Projects Overview */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Projects Overview</h2>
-              <Link to="/projects" className="text-sm text-primary-600 hover:underline">View all</Link>
-            </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-            <div className="rounded-lg border border-gray-200 p-4 text-center">
-              {loadingProjects ? (
-                <div className="animate-pulse">
-                  <div className="h-8 bg-gray-200 rounded w-12 mx-auto mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-16 mx-auto"></div>
-                </div>
-              ) : (
-                <>
-                  <p className="text-2xl font-bold text-gray-900">{totalProjects}</p>
-                  <p className="text-xs text-gray-600 mt-1">Total</p>
-                </>
-              )}
-            </div>
-            <div className="rounded-lg border border-gray-200 p-4 text-center">
-              {loadingProjects ? (
-                <div className="animate-pulse">
-                  <div className="h-8 bg-gray-200 rounded w-12 mx-auto mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-16 mx-auto"></div>
-                </div>
-              ) : (
-                <>
-                  <p className="text-2xl font-bold text-blue-600">{inProgressProjects}</p>
-                  <p className="text-xs text-gray-600 mt-1">In Progress</p>
-                </>
-              )}
-            </div>
-            <div className="rounded-lg border border-gray-200 p-4 text-center">
-              {loadingProjects ? (
-                <div className="animate-pulse">
-                  <div className="h-8 bg-gray-200 rounded w-12 mx-auto mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-16 mx-auto"></div>
-                </div>
-              ) : (
-                <>
-                  <p className="text-2xl font-bold text-green-600">{completedProjects}</p>
-                  <p className="text-xs text-gray-600 mt-1">Completed</p>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Recent projects</h3>
-            {loadingProjects ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="p-3 rounded-lg border border-gray-200 animate-pulse">
-                    <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-2 bg-gray-200 rounded w-full mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                ))}
-              </div>
-            ) : recentProjects.length === 0 ? (
-              <p className="text-sm text-gray-500">No projects yet. <Link to="/projects" className="text-primary-600 hover:underline">Create one</Link>.</p>
-            ) : (
-              <div className="space-y-3">
-                {recentProjects.map((p: any) => {
-                  const total = p.total_phases || 6
-                  const completed = p.completed_phases || 0
-                  const pct = Math.min(100, Math.round((completed / total) * 100))
-                  const activity = docActivity[p.id]
-                  return (
-                    <div key={p.id} className="p-3 rounded-lg border border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium text-gray-900 truncate pr-3">{p.name}</div>
-                        <div className="text-xs text-gray-500">{completed}/{total} phases</div>
-                      </div>
-                      <div className="mt-2 h-2 bg-gray-100 rounded-full">
-                        <div className="h-2 bg-blue-600 rounded-full" style={{ width: `${pct}%` }} />
-                      </div>
-                      {activity && (
-                        <div className="mt-2 text-xs text-gray-600 flex flex-wrap gap-3">
-                          <span>PRD v{activity.prdCount}{activity.prdLast ? ` • ${new Date(activity.prdLast).toLocaleDateString()}` : ''}</span>
-                          <span>BRD v{activity.brdCount}{activity.brdLast ? ` • ${new Date(activity.brdLast).toLocaleDateString()}` : ''}</span>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-        </div>
 
-        {/* JIRA Overview */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">JIRA Overview</h2>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={refreshJiraStats} 
-                disabled={isAutoConnecting}
-                className="text-gray-500 hover:text-gray-800 text-sm inline-flex items-center gap-1 disabled:opacity-50" 
-                title="Refresh JIRA"
-              >
-                <RefreshCw className={`w-4 h-4 ${isAutoConnecting ? 'animate-spin' : ''}`} /> {isAutoConnecting ? 'Connecting...' : 'Refresh'}
-              </button>
-            </div>
-          </div>
-          
-          {jiraError ? (
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-              <p className="text-sm text-gray-600">Failed to load JIRA statistics</p>
-              <p className="text-xs text-gray-500 mt-1">{jiraError}</p>
-            </div>
-          ) : jiraOverview ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-lg border border-gray-200 p-4 text-center">
-                <p className="text-2xl font-bold text-indigo-600">{jiraOverview.projects ?? 0}</p>
-                <p className="text-xs text-gray-600 mt-1">Projects</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 p-4 text-center">
-                <p className="text-2xl font-bold text-gray-900">{jiraOverview.issues ?? 0}</p>
-                <p className="text-xs text-gray-600 mt-1">Issues</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 p-4 text-center">
-                <p className="text-2xl font-bold text-blue-600">{jiraOverview.inProgress ?? 0}</p>
-                <p className="text-xs text-gray-600 mt-1">In Progress</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 p-4 text-center">
-                <p className="text-2xl font-bold text-green-600">{jiraOverview.completed ?? 0}</p>
-                <p className="text-xs text-gray-600 mt-1">Completed</p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="rounded-lg border border-gray-200 p-4 text-center animate-pulse">
-                  <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
-                </div>
-              ))}
+          {/* Environment Diagnostic Panel (Shows in dev mode or on localhost) */}
+          {(import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname.includes('vercel.app')) && (
+            <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs">
+              <p className="font-mono text-amber-900">
+                <span className="font-bold">Diagnostic:</span> API URL = <span className="bg-amber-100 px-2 rounded">{import.meta.env.VITE_API_URL || '(using /api proxy)'}</span> | Token = {localStorage.getItem('token') ? '✅ present' : '❌ missing'}
+              </p>
             </div>
           )}
+
+          {/* Show projects loading error if any */}
+          {projectsError && (
+            <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-900">Projects Error</p>
+                <p className="text-sm text-red-700 mt-2">{projectsError}</p>
+                <button 
+                  onClick={loadProjects}
+                  className="mt-3 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Show JIRA error if any */}
+          {jiraError && (
+            <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-300 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-900">JIRA Status</p>
+                <p className="text-sm text-amber-700 mt-1">{jiraError}</p>
+              </div>
+            </div>
+          )}
+        
+          {/* Two-column layout: Projects and JIRA sections */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Projects Overview */}
+            <div className="card">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Projects Overview</h2>
+                <Link to="/projects" className="text-sm text-primary-600 hover:underline">View all</Link>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                <div className="rounded-lg border border-gray-200 p-4 text-center">
+                  {loadingProjects ? (
+                    <div className="animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded w-12 mx-auto mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-16 mx-auto"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-gray-900">{totalProjects}</p>
+                      <p className="text-xs text-gray-600 mt-1">Total</p>
+                    </>
+                  )}
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4 text-center">
+                  {loadingProjects ? (
+                    <div className="animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded w-12 mx-auto mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-16 mx-auto"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-blue-600">{inProgressProjects}</p>
+                      <p className="text-xs text-gray-600 mt-1">In Progress</p>
+                    </>
+                  )}
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4 text-center">
+                  {loadingProjects ? (
+                    <div className="animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded w-12 mx-auto mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-16 mx-auto"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-green-600">{completedProjects}</p>
+                      <p className="text-xs text-gray-600 mt-1">Completed</p>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Recent projects</h3>
+                {loadingProjects ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="p-3 rounded-lg border border-gray-200 animate-pulse">
+                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                        <div className="mt-2 h-2 bg-gray-200 rounded-full"></div>
+                        <div className="mt-2 h-3 bg-gray-200 rounded w-1/3"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : recentProjects.length === 0 ? (
+                  <p className="text-sm text-gray-500">No projects yet. <Link to="/projects" className="text-primary-600 hover:underline">Create one</Link>.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentProjects.map((p: any) => {
+                      const total = p.total_phases || 6
+                      const completed = p.completed_phases || 0
+                      const pct = Math.min(100, Math.round((completed / total) * 100))
+                      const activity = docActivity[p.id]
+                      return (
+                        <div key={p.id} className="p-3 rounded-lg border border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-gray-900 truncate pr-3">{p.name}</div>
+                            <div className="text-xs text-gray-500">{completed}/{total} phases</div>
+                          </div>
+                          <div className="mt-2 h-2 bg-gray-100 rounded-full">
+                            <div className="h-2 bg-blue-600 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          {activity && (
+                            <div className="mt-2 text-xs text-gray-600 flex flex-wrap gap-3">
+                              <span>PRD v{activity.prdCount}{activity.prdLast ? ` • ${new Date(activity.prdLast).toLocaleDateString()}` : ''}</span>
+                              <span>BRD v{activity.brdCount}{activity.brdLast ? ` • ${new Date(activity.brdLast).toLocaleDateString()}` : ''}</span>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* JIRA Overview */}
+            <div className="card">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">JIRA Overview</h2>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={refreshJiraStats} 
+                    disabled={isAutoConnecting}
+                    className="text-gray-500 hover:text-gray-800 text-sm inline-flex items-center gap-1 disabled:opacity-50" 
+                    title="Refresh JIRA"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isAutoConnecting ? 'animate-spin' : ''}`} /> {isAutoConnecting ? 'Connecting...' : 'Refresh'}
+                  </button>
+                </div>
+              </div>
+              
+              {jiraError ? (
+                <div className="p-4 bg-amber-50 border border-amber-300 rounded-lg text-center">
+                  <p className="text-sm font-medium text-amber-900">JIRA Not Connected</p>
+                  <p className="text-xs text-amber-700 mt-2">{jiraError}</p>
+                </div>
+              ) : jiraOverview ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="rounded-lg border border-gray-200 p-4 text-center">
+                    <p className="text-2xl font-bold text-indigo-600">{jiraOverview.projects ?? 0}</p>
+                    <p className="text-xs text-gray-600 mt-1">Projects</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-4 text-center">
+                    <p className="text-2xl font-bold text-gray-900">{jiraOverview.issues ?? 0}</p>
+                    <p className="text-xs text-gray-600 mt-1">Issues</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-4 text-center">
+                    <p className="text-2xl font-bold text-blue-600">{jiraOverview.inProgress ?? 0}</p>
+                    <p className="text-xs text-gray-600 mt-1">In Progress</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-4 text-center">
+                    <p className="text-2xl font-bold text-green-600">{jiraOverview.completed ?? 0}</p>
+                    <p className="text-xs text-gray-600 mt-1">Completed</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="rounded-lg border border-gray-200 p-4 text-center animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </DashboardErrorBoundary>
