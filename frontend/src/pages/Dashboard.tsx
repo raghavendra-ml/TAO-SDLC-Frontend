@@ -177,10 +177,16 @@ const Dashboard = () => {
       } catch (err) {
         console.error('❌ [Dashboard] Initialization error:', err)
       } finally {
-        console.log('✅ [Dashboard] Initialization complete - forcing render')
+        console.log('✅ [Dashboard] Initialization complete - all steps done')
+        // Set loading to false FIRST
         setLoadingProjects(false)
-        // Force a re-render
-        setRenderTrigger(prev => prev + 1)
+        console.log('✅ [Dashboard] Set loadingProjects=false')
+        
+        // Then after a micro-delay, trigger render
+        setTimeout(() => {
+          console.log('🔄 [Dashboard] Forcing render with trigger update')
+          setRenderTrigger(prev => prev + 1)
+        }, 10)
       }
     }
     
@@ -310,6 +316,13 @@ const Dashboard = () => {
     }
   }, [projects, renderTrigger, loadingProjects])
 
+  // Watch renderTrigger changes
+  useEffect(() => {
+    if (renderTrigger > 0) {
+      console.log(`🔄 [Dashboard] renderTrigger changed to ${renderTrigger}`)
+    }
+  }, [renderTrigger])
+
   const totalProjects = (projects || []).length
   const completedProjects = useMemo(() => (projects || []).filter((p: any) => (p.completed_phases || 0) >= (p.total_phases || 6)).length, [projects])
   const inProgressProjects = Math.max(0, totalProjects - completedProjects)
@@ -357,6 +370,8 @@ const Dashboard = () => {
   // Render decision: Show loading if projects haven't loaded yet
   // OR show dashboard if we have projects (even if still loading JIRA data)
   const hasProjects = projects && projects.length > 0
+  
+  console.log(`🎯 [Dashboard] RENDER CHECK: hasProjects=${hasProjects}, projectsLength=${projects?.length || 0}, loading=${loadingProjects}, trigger=${renderTrigger}`)
   
   if (!hasProjects && loadingProjects) {
     console.log(`🔵 [Dashboard] Render: Still loading. projects=${projects?.length || 0}, loading=${loadingProjects}`)
