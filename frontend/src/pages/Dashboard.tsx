@@ -55,6 +55,30 @@ class DashboardErrorBoundary extends React.Component<
   }
 }
 
+// Wrapper component to force re-render by changing the key
+const DashboardWrapper = () => {
+  const [renderKey, setRenderKey] = useState(0)
+  const [ready, setReady] = useState(false)
+  
+  useEffect(() => {
+    // Watch localStorage for a signal to re-render
+    const checkReady = () => {
+      const signal = localStorage.getItem('dashboard_ready_signal')
+      if (signal === 'true' && !ready) {
+        console.log('🔑 [DashboardWrapper] Got ready signal, incrementing key')
+        setReady(true)
+        setRenderKey(prev => prev + 1)
+        localStorage.removeItem('dashboard_ready_signal')
+      }
+    }
+    
+    const interval = setInterval(checkReady, 50)
+    return () => clearInterval(interval)
+  }, [ready])
+  
+  return <Dashboard key={renderKey} />
+}
+
 const Dashboard = () => {
   // Add global error handler
   React.useEffect(() => {
@@ -181,11 +205,9 @@ const Dashboard = () => {
         setLoadingProjects(false)
         console.log('✅ [Dashboard] Set loadingProjects=false')
         
-        // Then after a micro-delay, trigger render
-        setTimeout(() => {
-          console.log('🔄 [Dashboard] Forcing render with trigger update')
-          setRenderTrigger(prev => prev + 1)
-        }, 10)
+        // Signal wrapper to remount this component with new key
+        console.log('🔑 [Dashboard] Setting ready signal to remount component')
+        localStorage.setItem('dashboard_ready_signal', 'true')
       }
     }
     
@@ -624,5 +646,5 @@ const Dashboard = () => {
   }
 }
 
-export default Dashboard
+export default DashboardWrapper
 
