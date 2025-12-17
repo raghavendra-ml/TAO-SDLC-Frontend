@@ -182,6 +182,10 @@ const Dashboard = () => {
         console.error('⚠️ [Dashboard] Step 3 (non-critical):', err)
         // Don't fail dashboard if JIRA fails
       }
+      
+      // All initialization steps complete - hide loading spinner
+      setLoadingProjects(false)
+      console.log('✅ [Dashboard] All initialization complete - showing dashboard')
     }
     
     initializeDashboard()
