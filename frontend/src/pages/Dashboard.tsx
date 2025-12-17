@@ -308,11 +308,13 @@ const Dashboard = () => {
   }
 
 
-  // Add a useEffect to log state changes with actual values
+  // Add a useEffect to log when initializationComplete changes
   useEffect(() => {
-    const msg = `📊 [Dashboard] STATE CHANGED: loadingProjects=${loadingProjects}, projectsCount=${projects?.length || 0}, initComplete=${initializationComplete}, jiraErr=${jiraError ? 'YES' : 'NO'}, projErr=${projectsError ? 'YES' : 'NO'}`
-    console.log(msg)
-  }, [loadingProjects, projects, jiraError, projectsError, initializationComplete])
+    console.log(`🔄 [Dashboard] initializationComplete changed to: ${initializationComplete}`)
+    if (initializationComplete) {
+      console.log('🎉 [Dashboard] SHOULD NOW RENDER MAIN DASHBOARD')
+    }
+  }, [initializationComplete])
 
   const totalProjects = (projects || []).length
   const completedProjects = useMemo(() => (projects || []).filter((p: any) => (p.completed_phases || 0) >= (p.total_phases || 6)).length, [projects])
@@ -359,8 +361,11 @@ const Dashboard = () => {
   }, [projects])
   
   // Ensure we always render something - show loading while initialization is happening
-  if (!initializationComplete) {
-    console.log(`🔵 [Dashboard] Render: EARLY RETURN - Still initializing. loadingProjects=${loadingProjects}, initComplete=${initializationComplete}`)
+  // SAFETY: If we have projects data, render dashboard even if initializationComplete flag hasn't updated
+  const shouldShowDashboard = initializationComplete || (projects && projects.length > 0)
+  
+  if (!shouldShowDashboard) {
+    console.log(`🔵 [Dashboard] Render: EARLY RETURN - Still initializing. loadingProjects=${loadingProjects}, initComplete=${initializationComplete}, projectsCount=${projects?.length || 0}`)
     return (
       <DashboardErrorBoundary>
         <div className="min-h-screen bg-gray-50 p-8">
@@ -379,10 +384,13 @@ const Dashboard = () => {
 
   // Log render state after each render
   React.useMemo(() => {
-    console.log(`🟢 [Dashboard] Render: MAIN DASHBOARD RENDERING NOW! loadingProjects=${loadingProjects}, initComplete=${initializationComplete}, projects=${projects?.length || 0}`)
-  }, [loadingProjects, projectsError, projects, initializationComplete])
+    if (shouldShowDashboard) {
+      console.log(`🟢 [Dashboard] Render: MAIN DASHBOARD RENDERING NOW! loadingProjects=${loadingProjects}, initComplete=${initializationComplete}, projects=${projects?.length || 0}`)
+    }
+  }, [loadingProjects, projectsError, projects, initializationComplete, shouldShowDashboard])
 
   try {
+    console.log(`💚 [Dashboard] RETURNING MAIN DASHBOARD JSX. Projects: ${projects?.length}, shouldShow: ${shouldShowDashboard}`)
     return (
       <DashboardErrorBoundary>
         <div className="min-h-screen bg-white">
