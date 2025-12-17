@@ -97,15 +97,14 @@ const Dashboard = () => {
     console.log('🔍 [Dashboard] Component mounted successfully')
   }, [])
 
-  // Loading flag for projects
+  // Loading flag for projects - use local state, NOT zustand (zustand isn't triggering re-renders on Vercel)
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [projectsError, setProjectsError] = useState<string | null>(null)
+  const [projects, setLocalProjects] = useState<any[]>([])  // LOCAL state instead of zustand
   const [jiraOverview, setJiraOverview] = useState<{ projects: number; issues: number; inProgress: number; completed: number } | null>(null)
   const [jiraError, setJiraError] = useState<string | null>(null)
   const [isAutoConnecting, setIsAutoConnecting] = useState(false)
   const [jiraConfigReady, setJiraConfigReady] = useState(false)
-  const { projects: storeProjects, setProjects } = useProjectStore()
-  const projects = storeProjects || []
   const [docActivity, setDocActivity] = useState<Record<number, { prdCount: number; prdLast?: string; brdCount: number; brdLast?: string }>>({})
   
   const loadProjects = async () => {
@@ -114,7 +113,7 @@ const Dashboard = () => {
       console.log('📥 [Dashboard] Loading projects...')
       const res = await getProjects()
       console.log('✅ [Dashboard] Projects loaded:', res.data)
-      setProjects(res.data)
+      setLocalProjects(res.data)  // Use local state setter
       return true
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || error.message || 'Unknown error'
