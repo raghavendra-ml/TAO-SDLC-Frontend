@@ -93,20 +93,20 @@ const Dashboard = () => {
     console.log('🔍 [Dashboard] Component mounted successfully')
   }, [])
 
-  // Loading flag for projects
+  // Loading flag for projects - use ref to track if we've initialized
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [projectsError, setProjectsError] = useState<string | null>(null)
   const [jiraOverview, setJiraOverview] = useState<{ projects: number; issues: number; inProgress: number; completed: number } | null>(null)
   const [jiraError, setJiraError] = useState<string | null>(null)
   const [isAutoConnecting, setIsAutoConnecting] = useState(false)
   const [jiraConfigReady, setJiraConfigReady] = useState(false) // Track when config is saved
+  const [initializationComplete, setInitializationComplete] = useState(false)
   const { projects: storeProjects, setProjects } = useProjectStore()
   // Ensure projects always has a value to prevent crashes
   const projects = storeProjects || []
   const [docActivity, setDocActivity] = useState<Record<number, { prdCount: number; prdLast?: string; brdCount: number; brdLast?: string }>>({})
   
   const loadProjects = async () => {
-    setLoadingProjects(true)
     setProjectsError(null)
     try {
       console.log('📥 [Dashboard] Loading projects...')
@@ -130,10 +130,8 @@ const Dashboard = () => {
       }
       
       setProjectsError(`Failed to load projects: ${displayError}`)
-      // Even if projects fail to load, still set loading to false and show error
+      // Even if projects fail to load, still continue
       toast.error(`Projects error: ${displayError}`, { id: 'projects-error' })
-    } finally {
-      setLoadingProjects(false)
     }
   }
 
@@ -183,9 +181,11 @@ const Dashboard = () => {
         // Don't fail dashboard if JIRA fails
       }
       
-      // All initialization steps complete - hide loading spinner
+      // All initialization steps complete - MARK AS READY
+      console.log('✅ [Dashboard] All initialization complete - marking dashboard ready')
+      setInitializationComplete(true)
       setLoadingProjects(false)
-      console.log('✅ [Dashboard] All initialization complete - showing dashboard')
+      console.log('✅ [Dashboard] LOADING FLAG SET TO FALSE - dashboard should render now')
     }
     
     initializeDashboard()
@@ -308,16 +308,11 @@ const Dashboard = () => {
   }
 
 
-  // Add a useEffect to log state changes
+  // Add a useEffect to log state changes with actual values
   useEffect(() => {
-    console.log('📊 [Dashboard] STATE UPDATE:', { 
-      loadingProjects, 
-      projectsCount: projects?.length, 
-      jiraError, 
-      projectsError,
-      timestamp: new Date().toLocaleTimeString()
-    })
-  }, [loadingProjects, projects, jiraError, projectsError])
+    const msg = `📊 [Dashboard] STATE CHANGED: loadingProjects=${loadingProjects}, projectsCount=${projects?.length || 0}, initComplete=${initializationComplete}, jiraErr=${jiraError ? 'YES' : 'NO'}, projErr=${projectsError ? 'YES' : 'NO'}`
+    console.log(msg)
+  }, [loadingProjects, projects, jiraError, projectsError, initializationComplete])
 
   const totalProjects = (projects || []).length
   const completedProjects = useMemo(() => (projects || []).filter((p: any) => (p.completed_phases || 0) >= (p.total_phases || 6)).length, [projects])
@@ -363,13 +358,9 @@ const Dashboard = () => {
     if (projects && Array.isArray(projects) && projects.length) loadDocActivity()
   }, [projects])
   
-  // Ensure we always render something - show loading while projects are being fetched
-  if (loadingProjects) {
-    console.log('🔵 [Dashboard] Render: EARLY RETURN - Loading state - showing spinner', {
-      loadingProjects,
-      projectsCount: projects?.length,
-      timestamp: new Date().toLocaleTimeString()
-    })
+  // Ensure we always render something - show loading while initialization is happening
+  if (!initializationComplete) {
+    console.log(`🔵 [Dashboard] Render: EARLY RETURN - Still initializing. loadingProjects=${loadingProjects}, initComplete=${initializationComplete}`)
     return (
       <DashboardErrorBoundary>
         <div className="min-h-screen bg-gray-50 p-8">
@@ -388,8 +379,8 @@ const Dashboard = () => {
 
   // Log render state after each render
   React.useMemo(() => {
-    console.log('🟢 [Dashboard] Render: PASSING LOADING CHECK - Main dashboard rendering', { loadingProjects, projectsError, projectsCount: projects?.length || 0, timestamp: new Date().toLocaleTimeString() })
-  }, [loadingProjects, projectsError, projects])
+    console.log(`🟢 [Dashboard] Render: MAIN DASHBOARD RENDERING NOW! loadingProjects=${loadingProjects}, initComplete=${initializationComplete}, projects=${projects?.length || 0}`)
+  }, [loadingProjects, projectsError, projects, initializationComplete])
 
   try {
     return (
