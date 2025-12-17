@@ -350,6 +350,7 @@ const Dashboard = () => {
   
   // Ensure we always render something - show loading while projects are being fetched
   if (loadingProjects) {
+    console.log('🔵 [Dashboard] Render: Loading state - showing spinner')
     return (
       <DashboardErrorBoundary>
         <div className="min-h-screen bg-gray-50 p-8">
@@ -370,6 +371,7 @@ const Dashboard = () => {
     <DashboardErrorBoundary>
       <div className="min-h-screen bg-white">
         <div className="max-w-7xl mx-auto p-8">
+          {console.log('🟢 [Dashboard] Render: Main dashboard rendering', { loadingProjects, projectsError, projectsCount: projects?.length || 0 }) || null}
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>

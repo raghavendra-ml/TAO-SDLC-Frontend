@@ -146,14 +146,17 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
 
   useEffect(() => {
+    console.log('🔵 [ProtectedRoute] Auth check:', { isAuthenticated, loading })
     if (!loading && !isAuthenticated) {
       // Redirect to login if not authenticated
+      console.log('🔴 [ProtectedRoute] Not authenticated - redirecting to login')
       navigate('/login', { replace: true })
     }
   }, [isAuthenticated, loading, navigate])
 
   // Show loading spinner while checking authentication
   if (loading) {
+    console.log('⏳ [ProtectedRoute] Loading auth...')
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -166,9 +169,11 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   // If not authenticated, don't render children (navigation will handle redirect)
   if (!isAuthenticated) {
+    console.log('🔴 [ProtectedRoute] Not authenticated - returning null')
     return null
   }
 
   // Render protected content
+  console.log('🟢 [ProtectedRoute] Authenticated - rendering children')
   return <>{children}</>
 }
