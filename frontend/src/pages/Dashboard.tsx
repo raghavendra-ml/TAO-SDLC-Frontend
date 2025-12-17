@@ -308,6 +308,17 @@ const Dashboard = () => {
   }
 
 
+  // Add a useEffect to log state changes
+  useEffect(() => {
+    console.log('📊 [Dashboard] STATE UPDATE:', { 
+      loadingProjects, 
+      projectsCount: projects?.length, 
+      jiraError, 
+      projectsError,
+      timestamp: new Date().toLocaleTimeString()
+    })
+  }, [loadingProjects, projects, jiraError, projectsError])
+
   const totalProjects = (projects || []).length
   const completedProjects = useMemo(() => (projects || []).filter((p: any) => (p.completed_phases || 0) >= (p.total_phases || 6)).length, [projects])
   const inProgressProjects = Math.max(0, totalProjects - completedProjects)
@@ -354,7 +365,11 @@ const Dashboard = () => {
   
   // Ensure we always render something - show loading while projects are being fetched
   if (loadingProjects) {
-    console.log('🔵 [Dashboard] Render: Loading state - showing spinner')
+    console.log('🔵 [Dashboard] Render: EARLY RETURN - Loading state - showing spinner', {
+      loadingProjects,
+      projectsCount: projects?.length,
+      timestamp: new Date().toLocaleTimeString()
+    })
     return (
       <DashboardErrorBoundary>
         <div className="min-h-screen bg-gray-50 p-8">
@@ -373,12 +388,13 @@ const Dashboard = () => {
 
   // Log render state after each render
   React.useMemo(() => {
-    console.log('🟢 [Dashboard] Render: Main dashboard rendering', { loadingProjects, projectsError, projectsCount: projects?.length || 0 })
+    console.log('🟢 [Dashboard] Render: PASSING LOADING CHECK - Main dashboard rendering', { loadingProjects, projectsError, projectsCount: projects?.length || 0, timestamp: new Date().toLocaleTimeString() })
   }, [loadingProjects, projectsError, projects])
 
-  return (
-    <DashboardErrorBoundary>
-      <div className="min-h-screen bg-white">
+  try {
+    return (
+      <DashboardErrorBoundary>
+        <div className="min-h-screen bg-white">
         <div className="max-w-7xl mx-auto p-8">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -572,7 +588,33 @@ const Dashboard = () => {
         </div>
       </div>
     </DashboardErrorBoundary>
-  )
+    )
+  } catch (error: any) {
+    console.error('🔴 [Dashboard] RENDER ERROR:', error)
+    console.error('🔴 [Dashboard] RENDER ERROR STACK:', error?.stack)
+    return (
+      <DashboardErrorBoundary>
+        <div className="min-h-screen bg-gray-50 p-8">
+          <div className="max-w-2xl p-6 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h2 className="text-lg font-semibold text-red-900">Dashboard Render Error</h2>
+                <p className="text-sm text-red-700 mt-2">{error?.message || 'Unknown error occurred during render'}</p>
+                <p className="text-xs text-red-600 mt-3">Check the browser console for full error details.</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                >
+                  Reload Page
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </DashboardErrorBoundary>
+    )
+  }
 }
 
 export default Dashboard
