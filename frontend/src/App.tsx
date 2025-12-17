@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useEffect } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, ProtectedRoute } from './contexts/AuthContext'
 import Layout from './components/common/Layout'
