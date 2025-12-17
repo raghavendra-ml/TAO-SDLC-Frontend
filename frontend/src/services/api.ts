@@ -7,11 +7,13 @@ const getApiBaseUrl = () => {
   
   // If VITE_API_URL is set (ngrok URL for production), use it
   if (viteApiUrl && viteApiUrl.trim()) {
+    console.log('🔵 [API] Using ngrok/production URL:', viteApiUrl)
     return `${viteApiUrl}/api`
   }
   
   // For local development without ngrok, use relative path that proxies through Vite
   // This uses the proxy configured in vite.config.ts
+  console.log('🔵 [API] Using relative proxy URL: /api')
   return '/api'
 }
 
@@ -40,12 +42,51 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Enhanced logging for Vercel debugging
+    const isProduction = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('deployed')
+    const apiUrl = import.meta.env.VITE_API_URL
+    
+    // Log all errors with detailed info for debugging
+    console.error('🔴 [API Error]', {
+      url: error.config?.url,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      message: error.message,
+      apiBaseUrl: apiUrl,
+      isProduction,
+      environment: window.location.hostname
+    })
+    
+    // If response exists, log response details
+    if (error.response) {
+      console.error('🔴 [API Response Error]', error.response.data)
+    }
+    
+    // If no response (network error), provide more detail
+    if (!error.response && error.message === 'Network Error') {
+      console.error('🔴 [Network Error - Likely CORS or Connection Blocked]', {
+        trying: apiUrl,
+        suggestion: 'Check Vercel Environment Variables or CORS settings'
+      })
+    }
+    
     if (error.response?.status === 401) {
       // Unauthorized - clear auth and redirect to login
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       window.location.href = '/login'
     }
+    
+    // Log the error for debugging but don't throw for non-critical endpoints
+    const url = error.config?.url || ''
+    const isCritical = !url.includes('stats') && !url.includes('jira') && !url.includes('activity')
+    
+    if (!isCritical && error.message === 'Network Error') {
+      // Non-critical requests fail silently
+      console.debug('⚠️ [API] Non-critical endpoint failed (suppressed):', url)
+      return Promise.reject(error)
+    }
+    
     return Promise.reject(error)
   }
 )
@@ -166,6 +207,24 @@ export const getFullApiUrl = (endpoint: string) => {
   
   // For local development without ngrok, use relative path
   return endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+}
+
+// Health check for debugging connectivity
+export const healthCheck = async () => {
+  try {
+    const result = await api.get('/health/')
+    return { ok: true, data: result.data }
+  } catch (error: any) {
+    return {
+      ok: false,
+      error: {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url
+      }
+    }
+  }
 }
 
 export default api

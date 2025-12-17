@@ -3,6 +3,28 @@
 ## Overview
 Modern, interactive UI for the AI-Augmented Software Development Lifecycle Management System.
 
+## 🚀 Quick Start (3 Steps)
+
+**See [FRONTEND_SETUP_QUICK_START.md](../FRONTEND_SETUP_QUICK_START.md) for complete setup guide!**
+
+```powershell
+# Terminal 1: Backend
+cd backend
+python run_server.py
+
+# Terminal 2: ngrok
+ngrok http 8000
+# Copy the URL shown
+
+# Terminal 3: Frontend
+cd frontend
+# Edit .env.local and set VITE_API_URL to ngrok URL
+npm run dev
+# Visit http://localhost:3000
+```
+
+---
+
 ## Features
 - 🎨 Beautiful UI with Tailwind CSS
 - 🔄 Real-time updates
@@ -10,6 +32,8 @@ Modern, interactive UI for the AI-Augmented Software Development Lifecycle Manag
 - 📊 Interactive phase management
 - ✅ Approval workflow system
 - 📱 Responsive design
+- 🔧 NEW: System diagnostics page at `/diagnostics`
+- 🚨 NEW: Clear error messages and guidance
 
 ## Tech Stack
 - **React 18** - UI framework
@@ -25,6 +49,8 @@ Modern, interactive UI for the AI-Augmented Software Development Lifecycle Manag
 
 ### Prerequisites
 - Node.js 18+ and npm
+- Backend server running on port 8000
+- (Optional) ngrok for external access
 
 ### Installation
 

@@ -80,7 +80,19 @@ export default function LoginPage() {
       navigate('/')
     } catch (error: any) {
       console.error('Demo login error:', error)
-      const errorMessage = error.response?.data?.detail || error.message || 'Demo login failed. Please check if backend is running.'
+      
+      // Provide helpful error messages
+      let errorMessage = error.response?.data?.detail || error.message || 'Demo login failed'
+      
+      if (error.message?.includes('Network') || error.code === 'ECONNREFUSED' || error.message === 'Network Error') {
+        const ngrokUrl = import.meta.env.VITE_API_URL
+        if (ngrokUrl) {
+          errorMessage = `Cannot connect to backend at ${ngrokUrl}. Check that:\n1. Backend server is running\n2. ngrok is running and has that URL\n3. Check BACKEND_NGROK_SETUP.md for instructions`
+        } else {
+          errorMessage = 'Cannot connect to backend at localhost:8000. Please start the backend server first. Check BACKEND_NGROK_SETUP.md for instructions.'
+        }
+      }
+      
       toast.error(errorMessage)
     } finally {
       setLoading(false)
@@ -304,9 +316,19 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="mt-8 text-center text-sm text-gray-500">
-          Powered by AI • Secure Authentication • Enterprise Ready
-        </p>
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-500 mb-2">
+            Powered by AI • Secure Authentication • Enterprise Ready
+          </p>
+          <p className="text-xs text-gray-400">
+            <a 
+              href="/diagnostics" 
+              className="text-blue-500 hover:text-blue-600 underline"
+            >
+              System Status / Troubleshooting
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   )

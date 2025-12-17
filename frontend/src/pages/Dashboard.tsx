@@ -4,6 +4,7 @@ import { getProjects, getJiraStats, getProjectPhases } from '../services/api'
 import { getJiraConfig, saveJiraConfig, isJiraConfigured } from '../services/jiraConfig'
 import { useProjectStore } from '../store/projectStore'
 import { RefreshCw, AlertCircle } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 // Error boundary wrapper for dashboard sections
 class DashboardErrorBoundary extends React.Component<
@@ -17,11 +18,13 @@ class DashboardErrorBoundary extends React.Component<
 
   static getDerivedStateFromError(error: any) {
     console.error('🔴 [Dashboard ErrorBoundary] Caught error:', error)
+    console.error('🔴 [Dashboard ErrorBoundary] Full stack:', error?.stack)
     return { hasError: true, error: error?.message || String(error) || 'An error occurred' }
   }
 
   componentDidCatch(error: any, errorInfo: any) {
-    console.error('🔴 [Dashboard Error Boundary]:', error, errorInfo)
+    console.error('🔴 [Dashboard Error Boundary] Component Stack:', errorInfo.componentStack)
+    console.error('🔴 [Dashboard Error Boundary] Full error:', error)
   }
 
   render() {
@@ -53,13 +56,41 @@ class DashboardErrorBoundary extends React.Component<
 }
 
 const Dashboard = () => {
+  // Add global error handler
+  React.useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('🔴 [Dashboard] Uncaught error:', event.error)
+      console.error('   Message:', event.message)
+      console.error('   Filename:', event.filename)
+      console.error('   Line:', event.lineno)
+    }
+    
+    window.addEventListener('error', handleError)
+    return () => window.removeEventListener('error', handleError)
+  }, [])
+  
   // Diagnostic logging on mount
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL
+    const hasToken = !!localStorage.getItem('token')
+    const isVercel = window.location.hostname.includes('vercel.app')
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    
     console.log('🔍 [Dashboard] Environment Check:')
     console.log(`  - VITE_API_URL: ${apiUrl || '(not set - using /api proxy)'}`)
     console.log(`  - Current hostname: ${window.location.hostname}`)
-    console.log(`  - Token in storage: ${!!localStorage.getItem('token') ? '✅ Yes' : '❌ No'}`)
+    console.log(`  - Deployment: ${isVercel ? '🚀 Vercel' : isLocalhost ? '💻 Localhost' : '🌐 Other'}`)
+    console.log(`  - Token in storage: ${hasToken ? '✅ Yes' : '❌ No'}`)
+    console.log(`  - FULL API URL: ${apiUrl ? `${apiUrl}/api` : '/api'}`)
+    
+    // For Vercel: add extra debugging
+    if (isVercel && !apiUrl) {
+      console.error('🔴 [Dashboard] VERCEL DEPLOYMENT: VITE_API_URL not set!')
+      console.error('   Fix: Add VITE_API_URL to Vercel environment variables')
+      console.error('   See: FRONTEND_SETUP_QUICK_START.md - Deployment section')
+    }
+    
+    console.log('🔍 [Dashboard] Component mounted successfully')
   }, [])
 
   // Loading flag for projects
@@ -86,46 +117,74 @@ const Dashboard = () => {
       const errorMsg = error.response?.data?.detail || error.message || 'Unknown error'
       console.error('❌ [Dashboard] Error loading projects:', errorMsg, error)
       console.error('❌ [Dashboard] Full error:', error)
-      setProjectsError(`Failed to load projects: ${errorMsg}`)
+      
+      // Check if this is a connection error
+      let displayError = errorMsg
+      if (error.message?.includes('Network') || error.code === 'ECONNREFUSED' || error.message === 'Network Error') {
+        const ngrokUrl = import.meta.env.VITE_API_URL
+        if (ngrokUrl) {
+          displayError = `Cannot connect to backend (${ngrokUrl}). Please ensure ngrok is running or check your VITE_API_URL setting.`
+        } else {
+          displayError = 'Cannot connect to backend at localhost:8000. Please ensure the backend server is running.'
+        }
+      }
+      
+      setProjectsError(`Failed to load projects: ${displayError}`)
+      // Even if projects fail to load, still set loading to false and show error
+      toast.error(`Projects error: ${displayError}`, { id: 'projects-error' })
     } finally {
       setLoadingProjects(false)
     }
   }
 
   useEffect(() => {
-    loadProjects()
-    // Load cached JIRA stats from localStorage first for instant display
-    const saved = localStorage.getItem('jira_stats')
-    if (saved) {
-      try { 
-        const cachedStats = JSON.parse(saved)
-        setJiraOverview(cachedStats)
-        console.log('✅ [Dashboard] Loaded cached JIRA stats:', cachedStats)
-      } catch (e) {
-        console.warn('Failed to parse cached JIRA stats')
+    const initializeDashboard = async () => {
+      console.log('🚀 [Dashboard] Initializing...')
+      
+      try {
+        // Step 1: Load projects
+        console.log('📥 [Dashboard] Step 1: Loading projects...')
+        await loadProjects()
+        console.log('✅ [Dashboard] Step 1: Projects loaded')
+      } catch (err) {
+        console.error('❌ [Dashboard] Step 1 failed:', err)
+      }
+      
+      try {
+        // Step 2: Load JIRA stats from cache
+        console.log('📥 [Dashboard] Step 2: Loading cached JIRA stats...')
+        const saved = localStorage.getItem('jira_stats')
+        if (saved) {
+          try { 
+            const cachedStats = JSON.parse(saved)
+            setJiraOverview(cachedStats)
+            console.log('✅ [Dashboard] Step 2: Loaded cached JIRA stats:', cachedStats)
+          } catch (e) {
+            console.warn('⚠️ [Dashboard] Failed to parse cached JIRA stats:', e)
+          }
+        } else {
+          // Set default mock stats for first time
+          const defaultStats = { projects: 0, issues: 0, inProgress: 0, completed: 0 }
+          setJiraOverview(defaultStats)
+          localStorage.setItem('jira_stats', JSON.stringify(defaultStats))
+          console.log('✅ [Dashboard] Step 2: Created default JIRA stats')
+        }
+      } catch (err) {
+        console.error('❌ [Dashboard] Step 2 failed:', err)
+      }
+      
+      try {
+        // Step 3: Auto-connect to JIRA
+        console.log('📥 [Dashboard] Step 3: Auto-connecting to JIRA...')
+        await autoConnectJira()
+        console.log('✅ [Dashboard] Step 3: Auto-connect completed')
+      } catch (err) {
+        console.error('⚠️ [Dashboard] Step 3 (non-critical):', err)
+        // Don't fail dashboard if JIRA fails
       }
     }
     
-    if (!saved) {
-      // Set default mock stats for first time
-      const defaultStats = { projects: 0, issues: 0, inProgress: 0, completed: 0 }
-      setJiraOverview(defaultStats)
-      localStorage.setItem('jira_stats', JSON.stringify(defaultStats))
-    }
-    
-    // Auto-connect with defaults if not connected
-    autoConnectJira().catch(err => {
-      console.error('[Dashboard] Auto-connect error caught:', err)
-      // Don't re-throw - we have fallback data
-    }).finally(() => {
-      // After auto-connect completes, refresh stats after a short delay
-      setTimeout(() => {
-        refreshJiraStats().catch(err => {
-          console.error('[Dashboard] Refresh error caught:', err)
-          // Don't re-throw - we have fallback data
-        })
-      }, 300)
-    })
+    initializeDashboard()
   }, [])
 
   const refreshJiraStats = async () => {
@@ -179,6 +238,7 @@ const Dashboard = () => {
       
       setJiraError(userMessage + ' (Using cached data)')
       console.log('✓ [Dashboard] Continuing with cached JIRA data despite refresh error')
+      // Don't show toast for JIRA errors - use cached data instead
     }
   }
 
@@ -251,6 +311,7 @@ const Dashboard = () => {
   const isJiraConnected = jiraConfigReady || !!localStorage.getItem('jira_config')
   const recentProjects = useMemo(() => {
     // Sort by id desc as a proxy for recent if no created_at
+    if (!projects || !Array.isArray(projects)) return []
     const sorted = [...projects].sort((a: any, b: any) => (b.id || 0) - (a.id || 0))
     return sorted.slice(0, 3)
   }, [projects])
@@ -259,6 +320,7 @@ const Dashboard = () => {
     // Load Phase 1 version history for up to 3 recent projects
     const loadDocActivity = async () => {
       try {
+        if (!projects || !Array.isArray(projects) || projects.length === 0) return
         const targets = [...projects].sort((a: any, b: any) => (b.id || 0) - (a.id || 0)).slice(0, 3)
         const results: Record<number, { prdCount: number; prdLast?: string; brdCount: number; brdLast?: string }> = {}
         for (const p of targets) {
@@ -283,11 +345,11 @@ const Dashboard = () => {
         // Continue without activity data
       }
     }
-    if (projects.length) loadDocActivity()
+    if (projects && Array.isArray(projects) && projects.length) loadDocActivity()
   }, [projects])
   
-  // Ensure we always render something
-  if (!projects) {
+  // Ensure we always render something - show loading while projects are being fetched
+  if (loadingProjects) {
     return (
       <DashboardErrorBoundary>
         <div className="min-h-screen bg-gray-50 p-8">

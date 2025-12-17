@@ -40,16 +40,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load token and user from localStorage on mount
   useEffect(() => {
-    const storedToken = localStorage.getItem('token')
-    const storedUser = localStorage.getItem('user')
+    try {
+      const storedToken = localStorage.getItem('token')
+      const storedUser = localStorage.getItem('user')
 
-    if (storedToken && storedUser) {
-      setToken(storedToken)
-      setUser(JSON.parse(storedUser))
-      // Set default axios header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`
+      if (storedToken && storedUser) {
+        try {
+          const userData = JSON.parse(storedUser)
+          setToken(storedToken)
+          setUser(userData)
+          // Set default axios header
+          axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`
+          console.log('✅ [AuthContext] Loaded user from localStorage')
+        } catch (parseError) {
+          console.error('❌ [AuthContext] Failed to parse stored user:', parseError)
+          localStorage.removeItem('user')
+          localStorage.removeItem('token')
+        }
+      } else {
+        console.log('⚠️ [AuthContext] No stored token/user found')
+      }
+    } catch (storageError) {
+      console.error('❌ [AuthContext] localStorage error:', storageError)
+    } finally {
+      setLoading(false)
+      console.log('✅ [AuthContext] Auth initialization complete')
     }
-    setLoading(false)
   }, [])
 
   const login = async (username: string, password: string) => {
@@ -131,17 +147,28 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      navigate('/login')
+      // Redirect to login if not authenticated
+      navigate('/login', { replace: true })
     }
   }, [isAuthenticated, loading, navigate])
 
+  // Show loading spinner while checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     )
   }
 
-  return isAuthenticated ? <>{children}</> : null
+  // If not authenticated, don't render children (navigation will handle redirect)
+  if (!isAuthenticated) {
+    return null
+  }
+
+  // Render protected content
+  return <>{children}</>
 }
