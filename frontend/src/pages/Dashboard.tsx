@@ -69,6 +69,10 @@ const Dashboard = () => {
     return () => window.removeEventListener('error', handleError)
   }, [])
   
+  // Use a ref to track if initialization is in progress
+  const initInProgress = React.useRef(false)
+  const [renderTrigger, setRenderTrigger] = useState(0)  // Force re-render by changing this
+  
   // Diagnostic logging on mount
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL
@@ -93,16 +97,14 @@ const Dashboard = () => {
     console.log('🔍 [Dashboard] Component mounted successfully')
   }, [])
 
-  // Loading flag for projects - use ref to track if we've initialized
+  // Loading flag for projects
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [projectsError, setProjectsError] = useState<string | null>(null)
   const [jiraOverview, setJiraOverview] = useState<{ projects: number; issues: number; inProgress: number; completed: number } | null>(null)
   const [jiraError, setJiraError] = useState<string | null>(null)
   const [isAutoConnecting, setIsAutoConnecting] = useState(false)
-  const [jiraConfigReady, setJiraConfigReady] = useState(false) // Track when config is saved
-  const [initializationComplete, setInitializationComplete] = useState(false)
+  const [jiraConfigReady, setJiraConfigReady] = useState(false)
   const { projects: storeProjects, setProjects } = useProjectStore()
-  // Ensure projects always has a value to prevent crashes
   const projects = storeProjects || []
   const [docActivity, setDocActivity] = useState<Record<number, { prdCount: number; prdLast?: string; brdCount: number; brdLast?: string }>>({})
   
@@ -113,30 +115,35 @@ const Dashboard = () => {
       const res = await getProjects()
       console.log('✅ [Dashboard] Projects loaded:', res.data)
       setProjects(res.data)
+      return true
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || error.message || 'Unknown error'
       console.error('❌ [Dashboard] Error loading projects:', errorMsg, error)
-      console.error('❌ [Dashboard] Full error:', error)
       
-      // Check if this is a connection error
       let displayError = errorMsg
       if (error.message?.includes('Network') || error.code === 'ECONNREFUSED' || error.message === 'Network Error') {
         const ngrokUrl = import.meta.env.VITE_API_URL
         if (ngrokUrl) {
-          displayError = `Cannot connect to backend (${ngrokUrl}). Please ensure ngrok is running or check your VITE_API_URL setting.`
+          displayError = `Cannot connect to backend (${ngrokUrl}). Please ensure ngrok is running.`
         } else {
           displayError = 'Cannot connect to backend at localhost:8000. Please ensure the backend server is running.'
         }
       }
       
       setProjectsError(`Failed to load projects: ${displayError}`)
-      // Even if projects fail to load, still continue
       toast.error(`Projects error: ${displayError}`, { id: 'projects-error' })
+      return false
     }
   }
 
   useEffect(() => {
     const initializeDashboard = async () => {
+      if (initInProgress.current) {
+        console.log('⚠️ [Dashboard] Initialization already in progress')
+        return
+      }
+      
+      initInProgress.current = true
       console.log('🚀 [Dashboard] Initializing...')
       
       try {
@@ -144,11 +151,7 @@ const Dashboard = () => {
         console.log('📥 [Dashboard] Step 1: Loading projects...')
         await loadProjects()
         console.log('✅ [Dashboard] Step 1: Projects loaded')
-      } catch (err) {
-        console.error('❌ [Dashboard] Step 1 failed:', err)
-      }
-      
-      try {
+        
         // Step 2: Load JIRA stats from cache
         console.log('📥 [Dashboard] Step 2: Loading cached JIRA stats...')
         const saved = localStorage.getItem('jira_stats')
@@ -161,31 +164,24 @@ const Dashboard = () => {
             console.warn('⚠️ [Dashboard] Failed to parse cached JIRA stats:', e)
           }
         } else {
-          // Set default mock stats for first time
           const defaultStats = { projects: 0, issues: 0, inProgress: 0, completed: 0 }
           setJiraOverview(defaultStats)
           localStorage.setItem('jira_stats', JSON.stringify(defaultStats))
           console.log('✅ [Dashboard] Step 2: Created default JIRA stats')
         }
-      } catch (err) {
-        console.error('❌ [Dashboard] Step 2 failed:', err)
-      }
-      
-      try {
+        
         // Step 3: Auto-connect to JIRA
         console.log('📥 [Dashboard] Step 3: Auto-connecting to JIRA...')
         await autoConnectJira()
         console.log('✅ [Dashboard] Step 3: Auto-connect completed')
       } catch (err) {
-        console.error('⚠️ [Dashboard] Step 3 (non-critical):', err)
-        // Don't fail dashboard if JIRA fails
+        console.error('❌ [Dashboard] Initialization error:', err)
+      } finally {
+        console.log('✅ [Dashboard] Initialization complete - forcing render')
+        setLoadingProjects(false)
+        // Force a re-render
+        setRenderTrigger(prev => prev + 1)
       }
-      
-      // All initialization steps complete - MARK AS READY
-      console.log('✅ [Dashboard] All initialization complete - marking dashboard ready')
-      setInitializationComplete(true)
-      setLoadingProjects(false)
-      console.log('✅ [Dashboard] LOADING FLAG SET TO FALSE - dashboard should render now')
     }
     
     initializeDashboard()
@@ -307,14 +303,12 @@ const Dashboard = () => {
     }
   }
 
-
-  // Add a useEffect to log when initializationComplete changes
+  // Log when projects update
   useEffect(() => {
-    console.log(`🔄 [Dashboard] initializationComplete changed to: ${initializationComplete}`)
-    if (initializationComplete) {
-      console.log('🎉 [Dashboard] SHOULD NOW RENDER MAIN DASHBOARD')
+    if (projects && projects.length > 0) {
+      console.log(`📊 [Dashboard] Projects updated: ${projects.length} projects, renderTrigger=${renderTrigger}, loading=${loadingProjects}`)
     }
-  }, [initializationComplete])
+  }, [projects, renderTrigger, loadingProjects])
 
   const totalProjects = (projects || []).length
   const completedProjects = useMemo(() => (projects || []).filter((p: any) => (p.completed_phases || 0) >= (p.total_phases || 6)).length, [projects])
@@ -360,12 +354,12 @@ const Dashboard = () => {
     if (projects && Array.isArray(projects) && projects.length) loadDocActivity()
   }, [projects])
   
-  // Ensure we always render something - show loading while initialization is happening
-  // SAFETY: If we have projects data, render dashboard even if initializationComplete flag hasn't updated
-  const shouldShowDashboard = initializationComplete || (projects && projects.length > 0)
+  // Render decision: Show loading if projects haven't loaded yet
+  // OR show dashboard if we have projects (even if still loading JIRA data)
+  const hasProjects = projects && projects.length > 0
   
-  if (!shouldShowDashboard) {
-    console.log(`🔵 [Dashboard] Render: EARLY RETURN - Still initializing. loadingProjects=${loadingProjects}, initComplete=${initializationComplete}, projectsCount=${projects?.length || 0}`)
+  if (!hasProjects && loadingProjects) {
+    console.log(`🔵 [Dashboard] Render: Still loading. projects=${projects?.length || 0}, loading=${loadingProjects}`)
     return (
       <DashboardErrorBoundary>
         <div className="min-h-screen bg-gray-50 p-8">
@@ -384,13 +378,13 @@ const Dashboard = () => {
 
   // Log render state after each render
   React.useMemo(() => {
-    if (shouldShowDashboard) {
-      console.log(`🟢 [Dashboard] Render: MAIN DASHBOARD RENDERING NOW! loadingProjects=${loadingProjects}, initComplete=${initializationComplete}, projects=${projects?.length || 0}`)
+    if (hasProjects) {
+      console.log(`🟢 [Dashboard] Render: MAIN DASHBOARD RENDERING NOW! projects=${projects.length}, trigger=${renderTrigger}`)
     }
-  }, [loadingProjects, projectsError, projects, initializationComplete, shouldShowDashboard])
+  }, [hasProjects, projects, renderTrigger])
 
   try {
-    console.log(`💚 [Dashboard] RETURNING MAIN DASHBOARD JSX. Projects: ${projects?.length}, shouldShow: ${shouldShowDashboard}`)
+    console.log(`💚 [Dashboard] RETURNING MAIN DASHBOARD. Projects: ${projects.length}, trigger=${renderTrigger}`)
     return (
       <DashboardErrorBoundary>
         <div className="min-h-screen bg-white">
