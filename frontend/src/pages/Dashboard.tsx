@@ -55,28 +55,9 @@ class DashboardErrorBoundary extends React.Component<
   }
 }
 
-// Wrapper component to force re-render by changing the key
+// Simple wrapper - just passes through to Dashboard
 const DashboardWrapper = () => {
-  const [renderKey, setRenderKey] = useState(0)
-  const [ready, setReady] = useState(false)
-  
-  useEffect(() => {
-    // Watch localStorage for a signal to re-render
-    const checkReady = () => {
-      const signal = localStorage.getItem('dashboard_ready_signal')
-      if (signal === 'true' && !ready) {
-        console.log('🔑 [DashboardWrapper] Got ready signal, incrementing key')
-        setReady(true)
-        setRenderKey(prev => prev + 1)
-        localStorage.removeItem('dashboard_ready_signal')
-      }
-    }
-    
-    const interval = setInterval(checkReady, 50)
-    return () => clearInterval(interval)
-  }, [ready])
-  
-  return <Dashboard key={renderKey} />
+  return <Dashboard />
 }
 
 const Dashboard = () => {
@@ -93,9 +74,8 @@ const Dashboard = () => {
     return () => window.removeEventListener('error', handleError)
   }, [])
   
-  // Use a ref to track if initialization is in progress
+  // Use a ref to track if initialization is in progress (not relying on state)
   const initInProgress = React.useRef(false)
-  const [renderTrigger, setRenderTrigger] = useState(0)  // Force re-render by changing this
   
   // Diagnostic logging on mount
   useEffect(() => {
@@ -200,14 +180,9 @@ const Dashboard = () => {
       } catch (err) {
         console.error('❌ [Dashboard] Initialization error:', err)
       } finally {
-        console.log('✅ [Dashboard] Initialization complete - all steps done')
-        // Set loading to false FIRST
+        console.log('✅ [Dashboard] Initialization complete - setting loading to false')
         setLoadingProjects(false)
-        console.log('✅ [Dashboard] Set loadingProjects=false')
-        
-        // Signal wrapper to remount this component with new key
-        console.log('🔑 [Dashboard] Setting ready signal to remount component')
-        localStorage.setItem('dashboard_ready_signal', 'true')
+        console.log('✅ [Dashboard] Done! Component should now show projects')
       }
     }
     
@@ -333,16 +308,9 @@ const Dashboard = () => {
   // Log when projects update
   useEffect(() => {
     if (projects && projects.length > 0) {
-      console.log(`📊 [Dashboard] Projects updated: ${projects.length} projects, renderTrigger=${renderTrigger}, loading=${loadingProjects}`)
+      console.log(`📊 [Dashboard] Projects in state: ${projects.length} projects, loading=${loadingProjects}`)
     }
-  }, [projects, renderTrigger, loadingProjects])
-
-  // Watch renderTrigger changes
-  useEffect(() => {
-    if (renderTrigger > 0) {
-      console.log(`🔄 [Dashboard] renderTrigger changed to ${renderTrigger}`)
-    }
-  }, [renderTrigger])
+  }, [projects, loadingProjects])
 
   const totalProjects = (projects || []).length
   const completedProjects = useMemo(() => (projects || []).filter((p: any) => (p.completed_phases || 0) >= (p.total_phases || 6)).length, [projects])
@@ -388,14 +356,11 @@ const Dashboard = () => {
     if (projects && Array.isArray(projects) && projects.length) loadDocActivity()
   }, [projects])
   
-  // Render decision: Show loading if projects haven't loaded yet
-  // OR show dashboard if we have projects (even if still loading JIRA data)
-  const hasProjects = projects && projects.length > 0
+  // SIMPLE RENDERING: Show loading spinner ONLY while loading
+  console.log(`🎯 [Dashboard] Render check: loading=${loadingProjects}, projects=${projects?.length || 0}`)
   
-  console.log(`🎯 [Dashboard] RENDER CHECK: hasProjects=${hasProjects}, projectsLength=${projects?.length || 0}, loading=${loadingProjects}, trigger=${renderTrigger}`)
-  
-  if (!hasProjects && loadingProjects) {
-    console.log(`🔵 [Dashboard] Render: Still loading. projects=${projects?.length || 0}, loading=${loadingProjects}`)
+  if (loadingProjects) {
+    console.log(`🔵 [Dashboard] Still loading, showing spinner`)
     return (
       <DashboardErrorBoundary>
         <div className="min-h-screen bg-gray-50 p-8">
@@ -412,15 +377,15 @@ const Dashboard = () => {
     )
   }
 
-  // Log render state after each render
+  // Log when we render the main dashboard
   React.useMemo(() => {
-    if (hasProjects) {
-      console.log(`🟢 [Dashboard] Render: MAIN DASHBOARD RENDERING NOW! projects=${projects.length}, trigger=${renderTrigger}`)
+    if (!loadingProjects && projects.length > 0) {
+      console.log(`✅ [Dashboard] Rendering main dashboard with ${projects.length} projects`)
     }
-  }, [hasProjects, projects, renderTrigger])
+  }, [loadingProjects, projects.length])
 
   try {
-    console.log(`💚 [Dashboard] RETURNING MAIN DASHBOARD. Projects: ${projects.length}, trigger=${renderTrigger}`)
+    console.log(`💚 [Dashboard] Returning main dashboard JSX`)
     return (
       <DashboardErrorBoundary>
         <div className="min-h-screen bg-white">
