@@ -21,6 +21,8 @@ const api = axios.create({
   baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true', // Skip ngrok interstitial page
+    'User-Agent': 'TAO-SDLC-Frontend/1.0', // Also helps ngrok recognize as API client
   },
 })
 
