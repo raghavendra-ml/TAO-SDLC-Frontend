@@ -47,6 +47,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [jiraStats, setJiraStats] = useState<any>(null)
+  const [jiraError, setJiraError] = useState<string | null>(null)
 
   // Simple initialization
   useEffect(() => {
@@ -72,11 +73,14 @@ const Dashboard = () => {
             })
             if (statsRes.data?.success) {
               setJiraStats(statsRes.data)
+              setJiraError(null)
               console.log('✅ [Dashboard] JIRA stats loaded')
             }
           }
-        } catch (e) {
-          console.warn('⚠️ [Dashboard] JIRA stats failed (non-critical):', e)
+        } catch (e: any) {
+          const msg = e.response?.data?.detail || e.message || 'JIRA connection failed'
+          console.warn('⚠️ [Dashboard] JIRA stats failed (non-critical):', msg)
+          setJiraError(msg)
         }
         
         setError(null)
@@ -176,25 +180,61 @@ const Dashboard = () => {
             </div>
           )}
 
+          {/* Project Statistics */}
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Statistics</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-600 font-medium">Total Projects</p>
+                <p className="text-3xl font-bold text-blue-900 mt-2">{projects.length}</p>
+              </div>
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-sm text-green-600 font-medium">Active Projects</p>
+                <p className="text-3xl font-bold text-green-900 mt-2">
+                  {projects.filter((p: any) => p.status === 'Active').length}
+                </p>
+              </div>
+              <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <p className="text-sm text-orange-600 font-medium">Average Phase</p>
+                <p className="text-3xl font-bold text-orange-900 mt-2">
+                  {(projects.reduce((sum: number, p: any) => sum + (p.current_phase || 1), 0) / projects.length).toFixed(1)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* JIRA Statistics */}
           {jiraStats && (
             <div className="mt-8 pt-8 border-t border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">JIRA Stats</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">JIRA Statistics</h2>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-600">JIRA Projects</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-2">{jiraStats.projects || 0}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <p className="text-sm text-gray-600">Total Issues</p>
-                  <p className="text-2xl font-bold text-gray-900">{jiraStats.issues || 0}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-2">{jiraStats.issues || 0}</p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600">In Progress</p>
-                  <p className="text-2xl font-bold text-orange-600">{jiraStats.in_progress || 0}</p>
+                <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                  <p className="text-sm text-orange-600 font-medium">In Progress</p>
+                  <p className="text-2xl font-bold text-orange-900 mt-2">{jiraStats.in_progress || 0}</p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-green-600">{jiraStats.completed || 0}</p>
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-600 font-medium">Completed</p>
+                  <p className="text-2xl font-bold text-green-900 mt-2">{jiraStats.completed || 0}</p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600">Projects</p>
-                  <p className="text-2xl font-bold text-blue-600">{jiraStats.projects || 0}</p>
+              </div>
+            </div>
+          )}
+
+          {jiraError && (
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-900">JIRA Status</p>
+                  <p className="text-sm text-amber-700 mt-1">{jiraError}</p>
                 </div>
               </div>
             </div>

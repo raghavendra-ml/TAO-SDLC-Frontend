@@ -32,6 +32,9 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      console.log(`✅ [API] Added auth token to ${config.url}`)
+    } else {
+      console.warn(`⚠️ [API] No token for ${config.url}`)
     }
     return config
   },
@@ -73,10 +76,26 @@ api.interceptors.response.use(
     }
     
     if (error.response?.status === 401) {
-      // Unauthorized - clear auth and redirect to login
+      // Unauthorized - token invalid or missing
+      const token = localStorage.getItem('token')
+      console.error('🔴 [API] 401 Unauthorized:', {
+        hasToken: !!token,
+        tokenLength: token?.length || 0,
+        url: error.config?.url,
+        message: error.response?.data?.detail || error.response?.data?.message || 'Unauthorized'
+      })
+      
+      // Clear auth and redirect to login
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      window.location.href = '/login'
+      // Redirect to login on next page load
+      if (!window.location.pathname.includes('/login')) {
+        console.error('🔴 [API] Redirecting to login due to 401')
+        // Use a small delay to allow logs to flush
+        setTimeout(() => {
+          window.location.href = '/login'
+        }, 100)
+      }
     }
     
     // Log the error for debugging but don't throw for non-critical endpoints
