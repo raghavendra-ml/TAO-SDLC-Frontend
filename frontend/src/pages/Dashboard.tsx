@@ -125,13 +125,13 @@ const Dashboard = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-500 mt-1">Project overview</p>
+              <p className="text-gray-500 mt-1">Project & JIRA Overview</p>
             </div>
             <Link
               to="/projects"
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              All Projects
+              Manage Projects
             </Link>
           </div>
 
@@ -145,100 +145,90 @@ const Dashboard = () => {
             </div>
           )}
 
-          {projects.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No projects found</p>
-              <Link to="/projects" className="text-blue-600 hover:underline mt-2 inline-block">
-                Create a new project
-              </Link>
-            </div>
-          ) : (
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Projects ({projects.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projects.map((project: any) => (
-                  <Link
-                    key={project.id}
-                    to={`/projects/${project.id}`}
-                    className="p-4 border border-gray-200 rounded-lg hover:shadow-md hover:border-blue-300 transition-all"
-                  >
-                    <h3 className="font-semibold text-gray-900 truncate">{project.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{project.description}</p>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                      <span className="text-xs text-gray-500">
-                        Phase {project.current_phase || 1}/{project.total_phases || 6}
-                      </span>
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        {project.status || 'Active'}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Project Statistics */}
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Statistics</h2>
+          {/* Project Statistics Section */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Overview</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-sm text-blue-600 font-medium">Total Projects</p>
-                <p className="text-3xl font-bold text-blue-900 mt-2">{projects.length}</p>
+                <p className="text-4xl font-bold text-blue-900 mt-3">{projects.length}</p>
+                <p className="text-xs text-blue-600 mt-2">Active projects in system</p>
               </div>
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="p-6 bg-green-50 rounded-lg border border-green-200">
                 <p className="text-sm text-green-600 font-medium">Active Projects</p>
-                <p className="text-3xl font-bold text-green-900 mt-2">
-                  {projects.filter((p: any) => p.status === 'Active').length}
+                <p className="text-4xl font-bold text-green-900 mt-3">
+                  {projects.filter((p: any) => p.status === 'Active' || !p.status).length}
                 </p>
+                <p className="text-xs text-green-600 mt-2">Currently in progress</p>
               </div>
-              <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+              <div className="p-6 bg-orange-50 rounded-lg border border-orange-200">
                 <p className="text-sm text-orange-600 font-medium">Average Phase</p>
-                <p className="text-3xl font-bold text-orange-900 mt-2">
-                  {(projects.reduce((sum: number, p: any) => sum + (p.current_phase || 1), 0) / projects.length).toFixed(1)}
+                <p className="text-4xl font-bold text-orange-900 mt-3">
+                  {projects.length > 0 
+                    ? (projects.reduce((sum: number, p: any) => sum + (p.current_phase || 1), 0) / projects.length).toFixed(1)
+                    : '0'}
                 </p>
+                <p className="text-xs text-orange-600 mt-2">Across all projects</p>
               </div>
             </div>
           </div>
 
-          {/* JIRA Statistics */}
-          {jiraStats && (
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">JIRA Statistics</h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600">JIRA Projects</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-2">{jiraStats.projects || 0}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600">Total Issues</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-2">{jiraStats.issues || 0}</p>
-                </div>
-                <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                  <p className="text-sm text-orange-600 font-medium">In Progress</p>
-                  <p className="text-2xl font-bold text-orange-900 mt-2">{jiraStats.in_progress || 0}</p>
-                </div>
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-sm text-green-600 font-medium">Completed</p>
-                  <p className="text-2xl font-bold text-green-900 mt-2">{jiraStats.completed || 0}</p>
-                </div>
-              </div>
+          {/* Phase Breakdown */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Projects by Phase</h2>
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+              {[1, 2, 3, 4, 5, 6].map((phase) => {
+                const count = projects.filter((p: any) => (p.current_phase || 1) === phase).length
+                return (
+                  <div key={phase} className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                    <p className="text-sm font-medium text-gray-600">Phase {phase}</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-2">{count}</p>
+                    <p className="text-xs text-gray-500 mt-1">{count === 1 ? 'project' : 'projects'}</p>
+                  </div>
+                )
+              })}
             </div>
-          )}
+          </div>
 
-          {jiraError && (
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-amber-900">JIRA Status</p>
-                  <p className="text-sm text-amber-700 mt-1">{jiraError}</p>
+          {/* JIRA Statistics Section */}
+          {jiraStats ? (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">JIRA Integration Status</h2>
+              <div className="p-6 bg-green-50 border-2 border-green-200 rounded-lg mb-6">
+                <p className="text-sm font-semibold text-green-900">✓ JIRA Connected</p>
+                <p className="text-xs text-green-700 mt-1">Successfully connected to JIRA instance</p>
+              </div>
+              
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">JIRA Project Statistics</h2>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="p-6 bg-indigo-50 rounded-lg border border-indigo-200">
+                  <p className="text-sm text-indigo-600 font-medium">JIRA Projects</p>
+                  <p className="text-3xl font-bold text-indigo-900 mt-3">{jiraStats.projects || 0}</p>
+                </div>
+                <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-600 font-medium">Total Issues</p>
+                  <p className="text-3xl font-bold text-blue-900 mt-3">{jiraStats.issues || 0}</p>
+                </div>
+                <div className="p-6 bg-orange-50 rounded-lg border border-orange-200">
+                  <p className="text-sm text-orange-600 font-medium">In Progress</p>
+                  <p className="text-3xl font-bold text-orange-900 mt-3">{jiraStats.in_progress || 0}</p>
+                </div>
+                <div className="p-6 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-600 font-medium">Completed</p>
+                  <p className="text-3xl font-bold text-green-900 mt-3">{jiraStats.completed || 0}</p>
                 </div>
               </div>
             </div>
-          )}
+          ) : jiraError ? (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-900">JIRA Not Connected</p>
+                <p className="text-sm text-amber-700 mt-1">{jiraError}</p>
+                <p className="text-xs text-amber-600 mt-2">Configure JIRA credentials in Settings to enable JIRA statistics</p>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </DashboardErrorBoundary>
