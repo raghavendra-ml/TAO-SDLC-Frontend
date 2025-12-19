@@ -46,8 +46,106 @@ const Dashboard = () => {
   const [projects, setProjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [jiraStats, setJiraStats] = useState<any>(null)
+  const [jiraOverview, setJiraOverview] = useState<any>(null)
   const [jiraError, setJiraError] = useState<string | null>(null)
+  const [isAutoConnecting, setIsAutoConnecting] = useState(false)
+  const [jiraConfigReady, setJiraConfigReady] = useState(false)
+
+  const refreshJiraStats = async () => {
+    const cfgRaw = localStorage.getItem('jira_config')
+    if (!cfgRaw) {
+      console.warn('⚠️ [Dashboard] No JIRA config found for refresh')
+      return
+    }
+    try {
+      const cfg = JSON.parse(cfgRaw)
+      console.log('🔄 [Dashboard] Refreshing JIRA stats...')
+      
+      const res = await getJiraStats({
+        url: cfg.url,
+        email: cfg.email,
+        api_token: cfg.apiToken,
+        project_key: cfg.projectKey || undefined,
+      })
+      
+      console.log('🟡 [Dashboard] Refresh response:', res.data)
+      
+      if (res.data?.success) {
+        const stats = {
+          projects: res.data.projects,
+          issues: res.data.issues,
+          inProgress: res.data.in_progress,
+          completed: res.data.completed,
+        }
+        setJiraOverview(stats)
+        setJiraError(null)
+        localStorage.setItem('jira_stats', JSON.stringify(stats))
+        console.log('✅ [Dashboard] Stats refreshed:', stats)
+        toast.success('JIRA stats refreshed')
+      } else {
+        const errorMsg = res.data?.error || 'Unknown error'
+        console.warn('⚠️ [Dashboard] Refresh failed:', errorMsg)
+        setJiraError(errorMsg)
+      }
+    } catch (e: any) {
+      console.error('❌ [Dashboard] Refresh exception:', e.message)
+      const msg = e.response?.data?.error || e.message || 'Could not refresh JIRA data'
+      setJiraError(msg)
+      toast.error(msg)
+    }
+  }
+
+  const autoConnectJira = async () => {
+    console.log('🔵 [Dashboard] Starting auto-connect to JIRA...')
+    setIsAutoConnecting(true)
+    
+    const defaultConfig = {
+      url: import.meta.env.VITE_JIRA_URL || 'https://taodigitalsolutions-team-x1wa6h9b.atlassian.net/',
+      email: import.meta.env.VITE_JIRA_EMAIL || 'raghavendra.thummala@taodigitalsolutions.com',
+      apiToken: import.meta.env.VITE_JIRA_API_TOKEN_2 || 'ATATT3xFfGF02vtMz5bnQP6tu-potUe3ki6ID8J64agtTZA1Zn78JOmuruszUpq9mKjJAljDvy8RDvc8_jNuLXgAJFzSH4o0QuEXS_Ls1T1CQHN6g48TrzoCw5FePqXDuljgCKYT2TwIs7JjCF7rDiQeBytSURwkWcI6J64L_lmLukxVLbD3UNA=A3B4A7C6',
+      projectKey: 'SCRUM'
+    }
+    
+    localStorage.setItem('jira_config', JSON.stringify(defaultConfig))
+    setJiraConfigReady(true)
+    console.log('🟢 [Dashboard] Config saved to localStorage')
+    
+    try {
+      console.log('🟡 [Dashboard] Calling getJiraStats API...')
+      const res = await getJiraStats({
+        url: defaultConfig.url,
+        email: defaultConfig.email,
+        api_token: defaultConfig.apiToken,
+        project_key: defaultConfig.projectKey || undefined,
+      })
+      
+      console.log('🟡 [Dashboard] API Response received:', res.data)
+      
+      if (res.data?.success) {
+        const stats = {
+          projects: res.data.projects,
+          issues: res.data.issues,
+          inProgress: res.data.in_progress,
+          completed: res.data.completed,
+        }
+        setJiraOverview(stats)
+        setJiraError(null)
+        localStorage.setItem('jira_stats', JSON.stringify(stats))
+        console.log('✅ [Dashboard] Successfully connected! Stats:', stats)
+      } else {
+        const errorMsg = res.data?.error || 'Unknown error'
+        console.warn('⚠️ [Dashboard] API returned error:', errorMsg)
+        setJiraError(errorMsg)
+      }
+    } catch (e: any) {
+      console.error('❌ [Dashboard] Exception:', e.message)
+      const errMsg = e.response?.data?.error || e.message || 'Connection failed'
+      setJiraError(`Could not connect: ${errMsg}`)
+    } finally {
+      setIsAutoConnecting(false)
+      console.log('✓ [Dashboard] Auto-connect finished')
+    }
+  }
 
   // Simple initialization
   useEffect(() => {
@@ -60,27 +158,16 @@ const Dashboard = () => {
         console.log('✅ [Dashboard] Projects loaded:', projectsRes.data)
         setProjects(projectsRes.data || [])
         
-        // Load JIRA stats (non-critical)
-        try {
-          console.log('📥 [Dashboard] Loading JIRA stats...')
-          const jiraConfig = getJiraConfig()
-          if (jiraConfig.isConfigured) {
-            const statsRes = await getJiraStats({
-              url: jiraConfig.url,
-              email: jiraConfig.email,
-              api_token: jiraConfig.apiToken,
-              project_key: jiraConfig.projectKey,
-            })
-            if (statsRes.data?.success) {
-              setJiraStats(statsRes.data)
-              setJiraError(null)
-              console.log('✅ [Dashboard] JIRA stats loaded')
-            }
+        // Load cached JIRA stats from localStorage first for instant display
+        const saved = localStorage.getItem('jira_stats')
+        if (saved) {
+          try { 
+            const cachedStats = JSON.parse(saved)
+            setJiraOverview(cachedStats)
+            console.log('✅ [Dashboard] Loaded cached JIRA stats:', cachedStats)
+          } catch (e) {
+            console.warn('Failed to parse cached JIRA stats')
           }
-        } catch (e: any) {
-          const msg = e.response?.data?.detail || e.message || 'JIRA connection failed'
-          console.warn('⚠️ [Dashboard] JIRA stats failed (non-critical):', msg)
-          setJiraError(msg)
         }
         
         setError(null)
@@ -98,6 +185,13 @@ const Dashboard = () => {
     }
     
     init()
+    
+    // Auto-connect JIRA after projects load
+    autoConnectJira().then(() => {
+      setTimeout(() => {
+        refreshJiraStats()
+      }, 300)
+    })
   }, [])
 
   // Render loading state
@@ -191,44 +285,63 @@ const Dashboard = () => {
           </div>
 
           {/* JIRA Statistics Section */}
-          {jiraStats ? (
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">JIRA Integration Status</h2>
-              <div className="p-6 bg-green-50 border-2 border-green-200 rounded-lg mb-6">
-                <p className="text-sm font-semibold text-green-900">✓ JIRA Connected</p>
-                <p className="text-xs text-green-700 mt-1">Successfully connected to JIRA instance</p>
-              </div>
-              
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">JIRA Project Statistics</h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="p-6 bg-indigo-50 rounded-lg border border-indigo-200">
-                  <p className="text-sm text-indigo-600 font-medium">JIRA Projects</p>
-                  <p className="text-3xl font-bold text-indigo-900 mt-3">{jiraStats.projects || 0}</p>
-                </div>
-                <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-sm text-blue-600 font-medium">Total Issues</p>
-                  <p className="text-3xl font-bold text-blue-900 mt-3">{jiraStats.issues || 0}</p>
-                </div>
-                <div className="p-6 bg-orange-50 rounded-lg border border-orange-200">
-                  <p className="text-sm text-orange-600 font-medium">In Progress</p>
-                  <p className="text-3xl font-bold text-orange-900 mt-3">{jiraStats.in_progress || 0}</p>
-                </div>
-                <div className="p-6 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-sm text-green-600 font-medium">Completed</p>
-                  <p className="text-3xl font-bold text-green-900 mt-3">{jiraStats.completed || 0}</p>
-                </div>
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">JIRA Overview</h2>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={refreshJiraStats} 
+                  disabled={isAutoConnecting}
+                  className="text-gray-500 hover:text-gray-800 text-sm inline-flex items-center gap-1 disabled:opacity-50" 
+                  title="Refresh JIRA"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isAutoConnecting ? 'animate-spin' : ''}`} /> {isAutoConnecting ? 'Connecting...' : 'Refresh'}
+                </button>
               </div>
             </div>
-          ) : jiraError ? (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-amber-900">JIRA Not Connected</p>
-                <p className="text-sm text-amber-700 mt-1">{jiraError}</p>
-                <p className="text-xs text-amber-600 mt-2">Configure JIRA credentials in Settings to enable JIRA statistics</p>
+
+            {jiraError && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-yellow-800">{jiraError}</p>
               </div>
-            </div>
-          ) : null}
+            )}
+
+            {jiraOverview ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="rounded-lg border border-gray-200 p-4 text-center">
+                  <p className="text-2xl font-bold text-indigo-600">{jiraOverview.projects ?? 0}</p>
+                  <p className="text-xs text-gray-600 mt-1">Projects</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4 text-center">
+                  <p className="text-2xl font-bold text-gray-900">{jiraOverview.issues ?? 0}</p>
+                  <p className="text-xs text-gray-600 mt-1">Issues</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4 text-center">
+                  <p className="text-2xl font-bold text-blue-600">{jiraOverview.inProgress ?? 0}</p>
+                  <p className="text-xs text-gray-600 mt-1">In Progress</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4 text-center">
+                  <p className="text-2xl font-bold text-green-600">{jiraOverview.completed ?? 0}</p>
+                  <p className="text-xs text-gray-600 mt-1">Completed</p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-gray-200 p-6 text-center">
+                {isAutoConnecting ? (
+                  <>
+                    <div className="inline-block w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+                    <p className="text-sm text-gray-600">Connecting to JIRA...</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-600">JIRA isn't connected yet.</p>
+                    <Link to="/projects" className="mt-3 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Connect in Projects</Link>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </DashboardErrorBoundary>
